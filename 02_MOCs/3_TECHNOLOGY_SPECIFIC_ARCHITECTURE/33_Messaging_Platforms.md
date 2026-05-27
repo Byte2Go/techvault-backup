@@ -1,0 +1,7 @@
+├── [[Kafka Concepts (Topics, Partitions, Consumer Groups)]]
+├── [[RabbitMQ Concepts (Exchanges, Queues)]]
+├── [[Message Delivery Guarantees]]
+├──  [[Message Ordering]]
+├──  [[Replication & High Availability]]
+├──  [[When to Use Kafka vs RabbitMQ]]
+├── [[Async Processing Pattern]]

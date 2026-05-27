@@ -1,0 +1,5 @@
+├── [[Standard Pipeline Stages]]
+├── [[Pipeline as Code]]
+├── [[Artifact Versioning]]
+├── [[Environment Promotion]]
+├──  [[Build Once Deploy Everywhere]]

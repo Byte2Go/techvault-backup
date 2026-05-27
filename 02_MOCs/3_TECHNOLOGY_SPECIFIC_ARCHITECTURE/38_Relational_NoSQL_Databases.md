@@ -1,0 +1,8 @@
+├── [[SQL Basics]]
+├── [[PostgreSQL vs MySQL vs Oracle]]
+├── [[Indexing Strategy]]
+├── [[NoSQL Types]]
+├── [[MongoDB vs DynamoDB vs Cassandra]]
+├── [[Consistency Guarantees]]
+├── [[Query Optimization]]
+├── [[Scaling Strategy]]

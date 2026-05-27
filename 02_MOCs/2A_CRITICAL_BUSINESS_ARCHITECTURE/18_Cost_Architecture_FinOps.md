@@ -1,0 +1,8 @@
+├── [[Cost as Architecture Decision]]
+├── [[Infrastructure Cost vs Application Design Cost]]
+├── [[Database Cost]]
+├── [[API Cost]]
+├── [[Caching Cost-Benefit]]
+├── [[Cost vs Performance Tradeoff]]
+├── [[Cost Monitoring]]
+└── [[Cost Optimization]]

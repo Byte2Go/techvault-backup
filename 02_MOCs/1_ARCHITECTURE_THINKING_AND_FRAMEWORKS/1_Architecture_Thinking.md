@@ -1,0 +1,7 @@
+├── [[Tradeoff Analysis]]
+├── [[Scalability Thinking]]
+├── [[Reliability Thinking]]
+├── [[Cost vs Complexity]]
+├── [[NFR Analysis]]
+├── [[Risk Analysis]]
+└── [[Architecture Decision Records]]

@@ -1,0 +1,6 @@
+├──  [[Architecture Decision Records (ADR)]]
+├──  [[Architecture Diagrams & Views]]
+├──  [[C4 Model Architecture]]
+├──  [[Communicating Trade-offs]]
+├──  [[Documentation Maintenance]]
+├──  [[Architecture Review Communication]]

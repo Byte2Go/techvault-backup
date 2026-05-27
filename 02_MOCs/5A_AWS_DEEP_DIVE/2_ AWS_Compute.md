@@ -1,0 +1,5 @@
+├── [[EC2 Fundamentals]]
+├── [[Lambda (Serverless)]]
+├──  [[ECS & Fargate]]
+├──  [[Auto Scaling]]
+├── [[EC2 vs Lambda vs Fargate Decision]]

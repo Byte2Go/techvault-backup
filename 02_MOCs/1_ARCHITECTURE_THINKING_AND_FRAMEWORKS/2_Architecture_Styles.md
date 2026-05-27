@@ -1,0 +1,6 @@
+├── [[Monolith vs Microservices Decision]]
+├── [[Layered Architecture]]
+├── [[Event-Driven Architecture]]
+├── [[Serverless Architecture]]
+├── [[CQRS & Event Sourcing]]
+└── [[Clean Architecture]]

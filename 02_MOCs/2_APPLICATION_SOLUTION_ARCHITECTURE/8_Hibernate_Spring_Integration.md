@@ -1,0 +1,5 @@
+├── [[Persistence Context Lifecycle]]
+├── [[Lazy Loading vs Eager Loading Decision]]
+├── [[N+1 Query Problem & Solutions]]
+├── [[Optimistic vs Pessimistic Locking Decision]]
+└── [[Caching Strategy]]

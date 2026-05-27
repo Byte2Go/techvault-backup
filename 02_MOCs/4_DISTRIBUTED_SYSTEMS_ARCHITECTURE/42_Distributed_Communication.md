@@ -1,0 +1,5 @@
+├── [[Synchronous vs Asynchronous]]
+├── [[Request-Reply Pattern]]
+├── [[Publish-Subscribe Pattern]]
+├── [[Message Ordering & Guarantees]]
+├── [[Error Handling in Async]]

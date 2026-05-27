@@ -1,0 +1,6 @@
+├──  [[Where AI Fits in Application]]
+├──  [[AI as Microservice vs Embedded]]
+├──  [[Async AI Processing]]
+├──  [[Fallback When AI Fails]]
+├──  [[AI Feature Monitoring]]
+├──  [[Feature Flag for AI Rollout]]

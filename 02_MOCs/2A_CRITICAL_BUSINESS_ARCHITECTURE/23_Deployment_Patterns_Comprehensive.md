@@ -1,0 +1,6 @@
+├── [[Blue-Green Deployment]]
+├── [[Canary Deployment]]
+├── [[Rolling Deployment]]
+├── [[Feature Flag Based Deployment]]
+├── [[Shadow Deployment]]
+├── [[Deployment Rollback Patterns]]

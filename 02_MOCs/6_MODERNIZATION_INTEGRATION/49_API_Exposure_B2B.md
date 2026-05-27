@@ -1,0 +1,6 @@
+├──  [[API Gateway for External Access]]
+├──  [[Rate Limiting for Partners]]
+├──  [[API Versioning for Stability]]
+├──  [[B2B Integration Patterns (EDI, XML, REST)]]
+├──  [[Partner Onboarding Process]]
+├──  [[SLA & Support Levels]]

@@ -1,0 +1,5 @@
+├── [[Two-Phase Commit (2PC) Concept]]
+├── [[Saga Pattern (Orchestration vs Choreography)]]
+├── [[Eventual Consistency Strategy]]
+├── [[Outbox Pattern]]
+├── [[When to Use 2PC vs Saga]]

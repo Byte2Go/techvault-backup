@@ -1,0 +1,6 @@
+├──  [[Legacy System Integration Patterns]]
+├──  [[API Wrapper for Legacy Services]]
+├──  [[Real-Time vs Batch Sync]]
+├──  [[Mainframe Integration]]
+├──  [[Mainframe Replacement Strategy]]
+├──  [[When to Keep vs Replace]]

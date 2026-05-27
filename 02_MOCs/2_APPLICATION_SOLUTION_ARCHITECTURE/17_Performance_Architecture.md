@@ -1,0 +1,6 @@
+├── [[Designing for Performance (Not Just Tuning)]]
+├── [[Latency vs Throughput Decision]]
+├── [[Request/Response Size Optimization]]
+├── [[Caching for Performance]]
+├── [[Async for Performance]]
+├── [[Performance Trade-offs]]
