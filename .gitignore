@@ -1,5 +1,3 @@
-.obsidian/
+.obsidian/workspace*
 .trash/
-.workspace.json
-*.workspace
 .DS_Store

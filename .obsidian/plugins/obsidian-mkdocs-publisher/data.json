@@ -1,0 +1,110 @@
+{
+  "github": {
+    "user": "Byte2Go",
+    "repo": "techvault",
+    "branch": "main",
+    "automaticallyMergePR": true,
+    "dryRun": {
+      "enable": false,
+      "folderName": "enveloppe"
+    },
+    "tokenSecret": "enveloppe",
+    "api": {
+      "tiersForApi": "Github Free/Pro/Team (default)",
+      "hostname": ""
+    },
+    "workflow": {
+      "commitMessage": "[PUBLISHER] Merge",
+      "name": ""
+    },
+    "otherRepo": [],
+    "verifiedRepo": true,
+    "rateLimit": 4999
+  },
+  "upload": {
+    "behavior": "fixed",
+    "defaultName": "",
+    "rootFolder": "",
+    "yamlFolderKey": "",
+    "frontmatterTitle": {
+      "enable": false,
+      "key": "title"
+    },
+    "replaceTitle": [],
+    "replacePath": [],
+    "autoclean": {
+      "includeAttachments": true,
+      "enable": false,
+      "excluded": []
+    },
+    "folderNote": {
+      "enable": false,
+      "rename": "index.md",
+      "addTitle": {
+        "enable": false,
+        "key": "title"
+      }
+    },
+    "metadataExtractorPath": ""
+  },
+  "conversion": {
+    "hardbreak": false,
+    "dataview": true,
+    "censorText": [],
+    "tags": {
+      "inline": false,
+      "exclude": [],
+      "fields": []
+    },
+    "links": {
+      "internal": true,
+      "unshared": false,
+      "wiki": true,
+      "wikiDisplayText": true,
+      "slugify": "disable",
+      "unlink": false,
+      "relativePath": true,
+      "textPrefix": "/",
+      "slugifyAnchor": "disable"
+    }
+  },
+  "embed": {
+    "attachments": true,
+    "overrideAttachments": [],
+    "keySendFile": [],
+    "notes": true,
+    "folder": "",
+    "convertEmbedToLinks": "keep",
+    "charConvert": "->",
+    "unHandledObsidianExt": [],
+    "sendSimpleLinks": true,
+    "forcePush": true,
+    "useObsidianFolder": true
+  },
+  "plugin": {
+    "shareKey": "share",
+    "fileMenu": false,
+    "editorMenu": false,
+    "excludedFolder": [],
+    "copyLink": {
+      "enable": false,
+      "links": "",
+      "removePart": [],
+      "addCmd": false,
+      "transform": {
+        "toUri": true,
+        "slugify": "lower",
+        "applyRegex": []
+      }
+    },
+    "noticeError": false,
+    "displayModalRepoEditing": false,
+    "setFrontmatterKey": "Set",
+    "migrated": true,
+    "shareAll": {
+      "enable": true,
+      "excludedFileName": "DRAFT"
+    }
+  },
+  "tabsId": "upload-configuration"
+}
