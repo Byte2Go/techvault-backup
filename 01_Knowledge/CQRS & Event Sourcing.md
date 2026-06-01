@@ -29,7 +29,7 @@ In a traditional application, the <mark style="background: #FFB8EBA6;">same data
 - **The Query Side (Reads):** Focuses solely on fast data delivery to the UI. It processes "Queries" (_"Request for information"_, e.g., `GetCustomerDashboard`). <mark style="background: #ABF7F7A6;">It has zero business logic and zero validation constraints.</mark>
 
 #### Why split them?
-In high-traffic systems, read and write performance characteristics are wildly asymmetric. You might write an order once, but view it 5,000 times. CQRS allows you to scale the write infrastructure and read infrastructure entirely independently.
+In high-traffic systems, <mark style="background: #FFB8EBA6;">read and write performance characteristics are wildly asymmetric</mark>. You might write an order once, but view it 5,000 times. CQRS allows you to scale the write infrastructure and read infrastructure entirely independently.
 
 ### 2. Event Sourcing (The Ultimate Transaction Log)
 <mark style="background: #ADCCFFA6;">Traditional databases are **State-Oriented**.</mark> They only store the _current snapshot_ of the world. If a user changes their shipping address from _New York_ to _Los Angeles_, the old address is overwritten via an `UPDATE` statement. The history is gone unless you have messy, secondary audit logging tables.
@@ -63,7 +63,7 @@ To figure out what is currently inside Cart 99, <mark style="background: #ADCCFF
 
 As displayed in the architecture framework diagram below, when you combine both concepts, you build an incredibly responsive system:
 
-1. **Command Execution:** A user submits a transaction via the Command Endpoint. The Command Service validates it against business logic and appends an Event directly to the **Event Store** (The Write Database).
+1. **Command Execution:** A user submits a transaction via the Command Endpoint. The Command Service validates it against business logic and appends an Event directly to the <mark style="background: #FFB86CA6;">**Event Store** (The Write Database)</mark>.
 2. **Asynchronous Projection:** <mark style="background: #ADCCFFA6;">An **Event Publisher** monitors the Event Store and streams the new event out to a **Messaging System** (like Kafka).</mark>
 3. **Read Model Hydration:** <mark style="background: #ADCCFFA6;">An **Event Consumer** reads the message</mark> and updates a highly optimized, denormalized **Read Storage** database (like Elasticsearch or a flat PostgreSQL View table).
 4. **Instant Query Response:** When a user views their dashboard, the Query Endpoint reads data directly from the Read Storage instantly, avoiding complex, slow table joins.
@@ -75,7 +75,6 @@ As displayed in the architecture framework diagram below, when you combine both 
 - **Massive Performance Optimization:** Your read database can be designed completely differently from your write database. For example, writes can go into a high-speed write-heavy log engine, while reads are fetched directly from a super-fast Elasticsearch index.
 
 #### The Hidden Production Pitfalls (The Reality Check):
-
 - **Eventual Consistency:** The <mark style="background: #FFB8EBA6;">Read Storage is updated asynchronously _after_ the Event Store commits. </mark>This means there is a split-second window where a user clicks "Submit", the page reloads, and their new data isn't visible on the query side yet. Your frontend must be built to handle this gracefully (e.g., using optimistic UI patterns).
 - **Event Evolution (Versioning):** What happens if you modify your code 3 years from now, <mark style="background: #FFB8EBA6;">changing an event structure field from `fullName` to `firstName` and `lastName`? You cannot alter historical data because events are strictly immutable.</mark> You have to <mark style="background: #FFF3A3A6;">write complex upcasters (transformers) to map old event versions to new structures at runtime.</mark>
 
@@ -124,9 +123,9 @@ This approach prioritizes lightning-fast write availability and massive system t
 ### 2. Concrete Mechanism
 
 1. **The Dual-Local-Write:** The application receives a transaction command. It opens a standard local ACID database transaction on the **Write Database**. It writes to the immutable `TRANSACTION_LEDGER` table and simultaneously writes a notification event payload into a local `OUTBOX_TABLE`.
-2. **The Synchronous Cache Seed (The Safety Net):** The moment the Write DB transaction commits, the application immediately duplicates the calculated balance state directly into an in-memory **Distributed Cache (Redis)** with a Time-To-Live (e.g., `TTL = 60 seconds`). **The money has been safely transferred at this point.**
-3. **The Log Tailer Extraction:** Separately, a Change Data Capture (CDC) framework (like Debezium) tails the Write DB's transaction logs (`WAL`). It reads the new outbox row and pushes it asynchronously to **Apache Kafka**.
-4. **Read Hydration:** A dedicated background worker consumes the event from Kafka and updates the pre-calculated balance row inside the primary **Read Database View**.
+2. **The Synchronous Cache Seed (The Safety Net):** The moment the Write DB transaction commits, the application <mark style="background: #FFB86CA6;">immediately duplicates the calculated balance state directly into an in-memory **Distributed Cache (Redis)** with a Time-To-Live (e.g., `TTL = 60 seconds`). </mark>**The money has been safely transferred at this point.**
+3. **The Log Tailer Extraction:** Separately, a <mark style="background: #BBFABBA6;">Change Data Capture (CDC) framework (like Debezium) tails the Write DB's transaction logs (`WAL`).</mark> It reads the new outbox row and <mark style="background: #ABF7F7A6;">pushes it asynchronously to **Apache Kafka**.</mark>
+4. **Read Hydration:** A <mark style="background: #ADCCFFA6;">dedicated background worker consumes the event from Kafka</mark> and updates the pre-calculated balance row inside the primary **Read Database View**.
 
 ### 3. Mitigating UI Lag & Handling Negative Failure Scenarios
 When a user executes back-to-back actions, the Query Service (Read Side) intercepts the request and runs through a multi-tiered resiliency strategy to calculate and return the correct balance.
@@ -160,7 +159,7 @@ When a user executes back-to-back actions, the Query Service (Read Side) interce
 ```
 
 #### Scenario A: The Happy Path (Micro-Lag < 50ms)
-The Query Service pulls from the Read DB. If it sees `Version 103`, it runs an inline, non-blocking application loop (waiting 50ms intervals). Within one or two loops, Kafka pushes the update, the version hits `104`, the loop breaks, and the UI shows the correct balance.
+The <mark style="background: #ADCCFFA6;">Query Service pulls from the Read DB</mark>. If it sees `Version 103`, it runs an inline, non-blocking application loop (waiting 50ms intervals). Within one or two loops, Kafka pushes the update, the version hits `104`, the loop breaks, and the UI shows the correct balance.
 
 #### Scenario B: The Negative Failure Path (Kafka Blocked / Caught in Traffic for 5 Mins)
 If Kafka crashes or experiences a 5-minute partition lag, the polling loop hits its maximum hard-coded ceiling (**500 milliseconds**) and breaks.

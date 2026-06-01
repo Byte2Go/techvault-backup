@@ -27,8 +27,8 @@ Production environments divide serverless compute into two distinct categories: 
 - **Runtime Model:** <mark style="background: #BBFABBA6;">Optimized for event-driven, short-lived transactional workloads</mark>. Natively scales from absolute zero to thousands of concurrent threads in milliseconds.
 #### B. Serverless Containers — e.g., AWS Fargate, Google Cloud Run
 - **The Model:** You supply <mark style="background: #FFB86CA6;">a standard, compliant standard container image</mark> (Docker/OCI). The cloud engine completely manages the underlying clustering infrastructure (bypassing Kubernetes or EC2 cluster management headaches).
-- **The Advantage:** **Zero execution time limits.** Containers can run indefinitely (hours or days) to process massive web sockets, streams, or multi-hour transactional batch jobs.
-- **Java Capabilities:** You can deploy standard `.war` configurations wrapped inside a base Tomcat/WildFly container or executable `.jar` Spring Boot applications. The engine dynamically scales container instances based on inbound request concurrency metrics.
+- **The Advantage:** **Zero execution time limits.** <mark style="background: #ADCCFFA6;">Containers can run indefinitely (hours or days)</mark> to process massive web sockets, streams, or multi-hour transactional batch jobs.
+- **Java Capabilities:** You <mark style="background: #FFF3A3A6;">can deploy standard `.war` configurations wrapped inside a base Tomcat/WildFly container or executable `.jar` Spring Boot applications</mark>. The engine dynamically scales container instances based on inbound request concurrency metrics.
 
 ### 2. Operational Philosophy & Infrastructure Comparison
 

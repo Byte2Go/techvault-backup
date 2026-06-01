@@ -1,4 +1,6 @@
 ├── [[HTTP Request Processing Flow]]
-├── [[Request-Response Cycle]]
 ├── [[Filter & Interceptor Chain]]
+├── [[Proxy Interception Constraint]]
+├── [[Request-Response Cycle]]
 └── [[Exception Handling Flow]]
+
