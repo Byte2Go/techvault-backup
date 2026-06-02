@@ -1,6 +1,6 @@
-When you step past stateless code and use explicit locks—whether they are local Java locks, database row locks, or distributed Redis locks—you open the door to a severe system failure: the **Deadlock**.
+When you step past stateless code <mark style="background: #FFF3A3A6;">and use explicit locks—whether they are local Java locks, database row locks, or distributed Redis locks</mark>—<mark style="background: #FFB8EBA6;">you open the door to a severe system failure: the **Deadlock**.</mark>
 
-A deadlock occurs when two or more parallel execution threads are permanently blocked, each waiting for the other to release a lock. Because neither thread can proceed, they stall indefinitely, consuming memory and thread pool capacity until the entire application service grid freezes.
+A deadlock occurs <mark style="background: #ADCCFFA6;">when two or more parallel execution threads are permanently blocked, each waiting for the other to release a lock</mark>. Because neither thread can proceed, they stall indefinitely, consuming memory and thread pool capacity until the entire application service grid freezes.
 
 ### 1. The Core Problem: The Mutual Wait Trap
 
