@@ -1,5 +1,5 @@
 ├── [[SQL vs NoSQL Decision]]
 ├── [[Data Modeling Strategy]]
-├── [[Read/Write Separation]]
+├── [[Read Write Separation]]
 ├── [[Range-Hash Partitioning]]
-└── [[Multi-Database Application]]
+└── [[Multi-Database Application - Polyglot Persistence]]
