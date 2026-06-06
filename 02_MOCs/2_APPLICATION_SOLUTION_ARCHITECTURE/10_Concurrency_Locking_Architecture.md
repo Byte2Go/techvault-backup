@@ -2,4 +2,5 @@
 ├── [[Deadlock Prevention]]
 ├── [[Optimistic Locking (Version Fields)]]
 ├── [[Pessimistic Locking (DB Locks)]]
+├── [[Distributed Locking (Redis, ZooKeeper)]]
 └── [[Database Isolation Levels]]
