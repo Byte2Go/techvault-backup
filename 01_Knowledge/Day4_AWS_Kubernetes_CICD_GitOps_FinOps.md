@@ -5,21 +5,19 @@
 **Time:** ~3 hours study + 1 hour Q&A practice
 
 ---
-
 ## Topic 1 · AWS Well-Architected Framework
-
 ### In One Line
-The AWS Well-Architected Framework's 5 pillars are the lens every cloud SA uses to evaluate an architecture — know them cold because every AWS interview opens here.
+The AWS Well-Architected Framework's 5 pillars are the lens every cloud SA <mark style="background: #FFB86CA6;">uses to evaluate an architecture</mark> — know them cold because every AWS interview opens here.
 
 ### The 5 Pillars
 
-| Pillar | Core Question | Key Practices |
-|---|---|---|
-| **Operational Excellence** | Can we run and improve? | IaC, runbooks, observability, small frequent changes |
-| **Security** | Are we protected? | Least privilege IAM, encryption at rest/transit, VPC isolation, WAF |
-| **Reliability** | Can we recover from failure? | Multi-AZ, auto-scaling, circuit breakers, chaos engineering |
-| **Performance Efficiency** | Are we using resources well? | Right-size compute, caching, CDN, read replicas |
-| **Cost Optimization** | Are we spending wisely? | Reserved instances, spot, rightsizing, delete unused resources |
+| Pillar                     | Core Question                    | Key Practices                                                       |
+| -------------------------- | -------------------------------- | ------------------------------------------------------------------- |
+| **Operational Excellence** | Can we run and improve?          | ==IaC==, runbooks, ==observability==, small frequent changes        |
+| **Security**               | Are we protected?                | Least privilege IAM, encryption at rest/transit, VPC isolation, WAF |
+| **Reliability**            | Can we ==recover from failure==? | Multi-AZ, auto-scaling, circuit breakers, chaos engineering         |
+| **Performance Efficiency** | Are we using resources well?     | Right-size compute, caching, CDN, read replicas                     |
+| **Cost Optimization**      | Are we ==spending wisely==?      | Reserved instances, spot, rightsizing, delete unused resources      |
 
 > 6th pillar added 2022: **Sustainability** — minimize carbon footprint, right-size, prefer managed services.
 
@@ -36,21 +34,20 @@ A: Five pillars — Operational Excellence (run and improve via IaC and observab
 ---
 
 ## Topic 2 · ECS Fargate vs EKS — When to Use Each
-
 ### In One Line
-ECS Fargate is serverless containers with no cluster management — EKS is Kubernetes with full control and portability but operational overhead.
+<mark style="background: #ABF7F7A6;">ECS Fargate is serverless containers</mark> <mark style="background: #FFF3A3A6;">with no cluster management </mark>— <mark style="background: #BBFABBA6;">EKS is Kubernetes with full control and portability</mark> <mark style="background: #FFB8EBA6;">but operational overhead.</mark>
 
 ### Comparison
 
-| Dimension | ECS Fargate | EKS (Kubernetes) |
-|---|---|---|
-| **Cluster management** | None — AWS manages fully | You manage control plane (or pay for managed) |
-| **Operational complexity** | Low | High |
-| **AWS lock-in** | High (ECS-native) | Low (k8s is portable) |
-| **Ecosystem** | AWS native (IAM, ALB, CloudWatch) | k8s ecosystem (Helm, Istio, ArgoCD) |
-| **Cost** | Pay per task vCPU/memory | EC2 node cost + control plane fee |
-| **Workload fit** | Simpler apps, fast start, small teams | Complex apps, service mesh, multi-cloud future |
-| **Auto-scaling** | Application Auto Scaling | HPA + Cluster Autoscaler |
+| Dimension                  | ECS Fargate                           | EKS (Kubernetes)                                  |
+| -------------------------- | ------------------------------------- | ------------------------------------------------- |
+| **Cluster management**     | None — AWS manages fully              | You manage ==control plane== (or pay for managed) |
+| **Operational complexity** | Low                                   | High                                              |
+| **AWS lock-in**            | High (ECS-native)                     | Low (k8s is portable)                             |
+| **Ecosystem**              | AWS native (IAM, ALB, CloudWatch)     | k8s ecosystem (Helm, Istio, ArgoCD)               |
+| **Cost**                   | Pay per task vCPU/memory              | EC2 node cost + ==control plane fee==             |
+| **Workload fit**           | Simpler apps, fast start, small teams | Complex apps, service mesh, multi-cloud future    |
+| **Auto-scaling**           | Application Auto Scaling              | HPA + Cluster Autoscaler                          |
 
 ### Decision Framework
 
@@ -62,7 +59,7 @@ Start here: Does your team have Kubernetes expertise?
     NO → ECS Fargate still simpler; EKS only if ecosystem benefit is real
 ```
 
-> **SA answer:** "I default to ECS Fargate for new teams or simpler workloads — you get managed containers without k8s overhead. I recommend EKS when the org has Kubernetes expertise, needs service mesh (Istio), or has multi-cloud ambitions."
+> **SA answer:** "I default to ECS Fargate for new teams or simpler workloads — you get managed containers without k8s overhead. I recommend EKS when the org has Kubernetes expertise, needs service mesh (Istio), or ==has multi-cloud ambitions.=="
 
 ### ECS Core Concepts
 ```
@@ -77,60 +74,26 @@ Service: desired count, load balancer, auto-scaling policy
 ## Topic 3 · Kubernetes Deep Dive
 
 ### In One Line
-Kubernetes is the industry-standard container orchestration platform — as an SA you must know deployments, services, HPA, namespaces, and how they map to architecture decisions.
+Kubernetes is the industry-standard <mark style="background: #FFB86CA6;">container orchestration platform</mark> — as an SA you must know deployments, services, HPA, namespaces, and how they map to architecture decisions.
 
-### Core k8s Objects
-
-```yaml
-# Deployment — manages ReplicaSets, rolling updates
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: order-service
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: order-service
-  template:
-    metadata:
-      labels:
-        app: order-service
-    spec:
-      containers:
-      - name: order-service
-        image: company/order-service:1.2.3  # Pinned tag — never 'latest' in prod
-        resources:
-          requests:
-            cpu: "250m"
-            memory: "512Mi"
-          limits:
-            cpu: "500m"
-            memory: "1Gi"
-        readinessProbe:
-          httpGet:
-            path: /actuator/health/readiness
-            port: 8080
-          initialDelaySeconds: 10
-          periodSeconds: 5
-        livenessProbe:
-          httpGet:
-            path: /actuator/health/liveness
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-```
-
+[[Kubernetes Fundamental Architecture]]
+[[Kubernetes Configuration]]
 ### Services — Exposing Pods
+In Kubernetes, Pods are highly volatile—they crash, scale up, scale down, and get rescheduled constantly. Every single time a Pod is recreated, it receives a brand-new, random internal IP address.
 
-| Service Type | Use Case |
-|---|---|
-| `ClusterIP` | Internal only — service-to-service communication |
-| `NodePort` | Exposes on each node's IP:port — dev/testing |
-| `LoadBalancer` | Creates cloud LB (ALB on AWS) — external access |
-| `ExternalName` | DNS alias to external service |
+If your `payment-service` tried to talk directly to an `order-service` Pod IP, the connection would break within minutes.
+
+The **Service file** solves this by creating a <mark style="background: #D2B3FFA6;">**permanent, unchanging virtual IP and DNS name** (like `http://order-service`) inside the cluster</mark>. <mark style="background: #ADCCFFA6;">It acts as a static, internal load balancer that sits in front of your moving Pods.</mark>
+
+| Service Type   | Use Case                                             |
+| -------------- | ---------------------------------------------------- |
+| `ClusterIP`    | ==Internal only — service-to-service communication== |
+| `NodePort`     | Exposes on each node's IP:port — dev/testing         |
+| `LoadBalancer` | ==Creates cloud LB (ALB on AWS) — external access==  |
+| `ExternalName` | DNS alias to external service                        |
 
 ```yaml
+# Inside order-service.yml
 apiVersion: v1
 kind: Service
 metadata:
@@ -145,34 +108,7 @@ spec:
 ```
 
 ### HPA — Horizontal Pod Autoscaler
-
-```yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: order-service-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: order-service
-  minReplicas: 2
-  maxReplicas: 20
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70  # Scale when avg CPU > 70%
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: 80
-```
-
+[[Kubernetes Auto Scaling]]
 > **SA note:** HPA scales pods. Cluster Autoscaler scales nodes (adds EC2 instances when pods can't be scheduled). Both needed in production.
 
 ### Namespace Strategy for Multi-Team/Multi-Tenant
@@ -203,16 +139,10 @@ spec:
 ```
 
 ### Helm — Package Manager for k8s
-
-```
-helm install order-service ./charts/order-service \
-  --namespace production \
-  --set image.tag=1.2.3 \
-  --set replicaCount=3 \
-  --values values-production.yaml
-```
+[[Kubernetes - Helm Package Manager]]
 
 **Chart structure:**
+[[Kubernetes - ConfigMap]]
 ```
 order-service/
 ├── Chart.yaml          # Chart metadata
@@ -225,23 +155,22 @@ order-service/
     └── configmap.yaml
 ```
 
-### Interview Q&A (40L SA Level)
-
+### Interview Q&A
 **Q: How do you handle zero-downtime deployments in Kubernetes?**
-A: Rolling update strategy in the Deployment spec — `maxUnavailable: 0` and `maxSurge: 1`. Kubernetes brings up new pods, waits for readiness probe to pass, then terminates old pods one by one. The readiness probe is critical — it gates traffic routing. Combine with a preStop hook (sleep 5s) to allow in-flight requests to drain before the pod terminates. For riskier releases, use blue-green (deploy new version alongside old, switch traffic at ingress) or canary (route 10% to new, monitor, then 100%).
+A: <mark style="background: #ABF7F7A6;">Rolling update strategy </mark>in the Deployment spec -<mark style="background: #ADCCFFA6;">Kubernetes brings up new pods, waits for readiness probe to pass, then terminates old pods one by one.</mark> <mark style="background: #FFB8EBA6;">The readiness probe is critical — it gates traffic routing. </mark> <mark style="background: #D2B3FFA6;"> For riskier releases, use **blue-green** (deploy new version alongside old, switch traffic at ingress) or **canary** (route 10% to new, monitor, then 100%).</mark>
 
 **Q: How do you design Kubernetes namespaces for a 20-service microservices system?**
-A: I namespace by environment first (production, staging, dev) and by concern (monitoring, ingress). Each environment namespace gets ResourceQuotas and LimitRanges to prevent one team's misconfigured service from starving others. Network policies restrict cross-namespace traffic — services can't communicate across environments. RBAC per namespace — dev team has full access to their dev namespace, read-only to staging, no direct access to production (CI/CD deploys to prod).
+A: I namespace <mark style="background: #FFB86CA6;">by environment first (production, staging, dev) and by concern (monitoring, ingress).</mark> Each environment namespace gets **ResourceQuotas** and **LimitRanges** to prevent one team's misconfigured service from starving others. <mark style="background: #D2B3FFA6;">Network policies restrict cross-namespace traffic — services can't communicate across environments.</mark> RBAC per namespace — dev team has full access to their dev namespace, read-only to staging, no direct access to production (CI/CD deploys to prod).
 
 **Q: What is the difference between liveness and readiness probes?**
-A: Readiness probe controls traffic routing — pod gets removed from the Service endpoints when readiness fails (stops receiving new requests but keeps running). Liveness probe controls pod lifecycle — pod gets killed and restarted when liveness fails. Set readiness to fail during startup (app loading) and during overload. Set liveness to detect deadlock or stuck state. Never make liveness probe dependent on external services — if the DB is down, you don't want all pods killed.
+A: <mark style="background: #ADCCFFA6;">Readiness probe controls traffic routing — pod gets removed from the Service endpoints when readiness fails </mark>(stops receiving new requests but keeps running). <mark style="background: #FFB86CA6;">Liveness probe controls pod lifecycle — pod gets killed and restarted when liveness fails</mark>. <mark style="background: #ADCCFFA6;">Set readiness to fail during startup (app loading) and during overload. </mark> <mark style="background: #FFB86CA6;">Set liveness to detect deadlock or stuck state. </mark> <mark style="background: #BBFABBA6;">Never make liveness probe dependent on external services — if the DB is down, you don't want all pods killed.</mark>
 
 ---
 
 ## Topic 4 · CI/CD Pipeline Design
 
 ### In One Line
-A production CI/CD pipeline automates build → test → scan → deploy with quality gates that prevent bad code from reaching production.
+A production CI/CD pipeline automates <mark style="background: #ADCCFFA6;">build → test → scan → deploy with quality gates</mark> that prevent bad code from reaching production.
 
 ### Pipeline Stages for a Java Microservice
 

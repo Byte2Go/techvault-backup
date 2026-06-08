@@ -238,8 +238,7 @@ React App → Apollo Federation Gateway → Order subgraph
 - More complex — worth it for large teams with many data types
 - <mark style="background: #BBFABBA6;">Read in Detail:</mark> [[GraphQL Federation Pattern= Schema-Driven Orchestration]]
 
-### Authentication in SPA + Microservices
-
+### [[Authentication in SPA + Microservices]]
 **JWT flow:**
 ```
 1. SPA → POST /auth/login → Auth Service → returns JWT (access token) + refresh token
@@ -250,11 +249,10 @@ React App → Apollo Federation Gateway → Order subgraph
 ```
 
 **Why NOT localStorage for tokens:**
-- XSS attack can steal tokens from localStorage
+- <mark style="background: #FFB8EBA6;">XSS attack can steal tokens from localStorage</mark>
 - HttpOnly cookies cannot be accessed by JavaScript at all
 
 ### CORS (Cross-Origin Resource Sharing)
-
 **Problem:** Browser blocks SPA at `https://app.company.com` from calling API at `https://api.company.com`
 
 **Solution:** API Gateway adds CORS headers:
@@ -265,60 +263,79 @@ Access-Control-Allow-Headers: Authorization, Content-Type
 Access-Control-Allow-Credentials: true  (needed if using cookies)
 ```
 
-**Preflight:** Browser sends OPTIONS request first; gateway must respond with 200 + CORS headers.
-
-### State Management Architecture
+**Preflight:** <mark style="background: #FFB86CA6;">Browser sends **OPTIONS** request first</mark>; <mark style="background: #ABF7F7A6;">gateway must respond with 200 + CORS headers.
+</mark>
+### [[State Management Architecture for Large SPAs]]
 For large SPAs with many microservices:
 - **Server state** (from APIs): React Query or SWR — handles caching, refetching, stale-while-revalidate
 - **Client state** (UI-only): Zustand or Redux — minimal, only for truly local state
 - **URL state**: Browser URL for navigable state (filters, tabs, pagination)
 
-### Interview Q&A (40L SA Level)
-
-**Q: How do you design authentication between a React SPA and your microservices?**
-A: OAuth 2.0 Authorization Code flow with PKCE for the SPA. After login, Auth Service issues a short-lived JWT (15-minute access token) and a longer-lived refresh token. Access token stored in memory (never localStorage — XSS risk). Refresh token in HttpOnly, Secure, SameSite=Strict cookie — JS cannot access it. API Gateway validates JWT on every request. SPA automatically refreshes tokens before expiry using the refresh token.
+### Interview Q&A
+**Q: How do you design authentication between a <mark style="background: #FFF3A3A6;">React SPA and your microservices</mark>?**
+A: <mark style="background: #BBFABBA6;">OAuth 2.0 Authorization Code flow with **PKCE for the SPA**</mark>. After login, Auth Service issues a short-lived Access Token as JWT (15-minute access token) and a longer-lived refresh token within Cookies. <mark style="background: #ADCCFFA6;">Access token stored in memory (never localStorage — XSS risk).</mark> <mark style="background: #D2B3FFA6;">Refresh token in HttpOnly, Secure, SameSite=Strict cookie — JS cannot access it. </mark> API Gateway validates JWT on every request. SPA automatically refreshes tokens before expiry using the refresh token.
 
 **Q: When would you use GraphQL over REST for a SPA?**
-A: GraphQL shines when the frontend has complex, varying data needs — different screens need different shapes of the same data, or data comes from many entities. For a product page needing data from Product, Inventory, Review, and Pricing services, a REST SPA makes 4 calls; GraphQL makes one. But GraphQL adds complexity: schema design, N+1 query problems (must use DataLoader), caching is harder than REST. I use REST by default and reach for GraphQL when the over/under-fetching problem is real and measurable.
+A: GraphQL shines when the frontend has complex, varying data needs — different screens need different shapes of the same data, or <mark style="background: #FFB8EBA6;">data comes from many entities</mark>. <mark style="background: #FF5582A6;">For a product page needing data from Product, Inventory, Review, and Pricing services, a REST SPA makes 4 calls</mark>; <mark style="background: #BBFABBA6;">GraphQL makes one. </mark> <mark style="background: #FFF3A3A6;">But GraphQL adds complexity: schema design, N+1 query problems (must use DataLoader), caching is harder than REST</mark>. I use REST by default and reach for <mark style="background: #ADCCFFA6;">GraphQL when the over/under-fetching problem is real and measurable.</mark>
 
 ---
-
 ## Topic 4 · CQRS (Command Query Responsibility Segregation)
-
 ### In One Line
 Separate the write model (commands that change state) from the read model (queries that read state), allowing each to be optimized independently.
-
 ### Why It Matters
-CQRS appears in SA interviews as a solution to read/write performance asymmetry. It's often paired with Event Sourcing and DDD — and interviewers expect you to know when to use it AND when not to.
-
+CQRS appears in SA interviews as a <mark style="background: #FFB86CA6;">solution to read/write performance asymmetry</mark>. It's often paired with Event Sourcing and DDD — and interviewers expect you to know when to use it AND when not to.
 ### The Problem CQRS Solves
 Single model trying to serve both writes and reads:
 - Write path: complex domain logic, validations, aggregate invariants
 - Read path: flat, joined, aggregated data for UI (50 fields from 5 tables)
-- Same model can't be optimal for both → either reads are slow or domain is polluted
-
+- <mark style="background: #FFB86CA6;">Same model can't be optimal for both → either reads are slow or domain is polluted</mark>
 ### CQRS Architecture
+To implement CQRS in production, the architecture explicitly separates the infrastructure into a **Write Pipeline** and an **Asynchronous Projection Pipeline** that populates an optimized **Read Database**.
 
 ```
-Command Side (Write):
-User → POST /orders (Command) → Command Handler → Aggregate (domain logic) → Event Store / DB
-                                                                           → publishes OrderPlaced event
-
-Query Side (Read):
-User → GET /orders/summary (Query) → Query Handler → Read Model (denormalized, optimized) → Response
-                                                            ↑
-                                             Event Projector (listens to events, builds read model)
+       [ COMMAND SIDE / WRITE ]                             [ QUERY SIDE / READ ]
+              Client UI                                             Client UI
+    (POST /orders)│                                 (GET /orders/summary)│       
+                  ▼                                                     ▼
+           Command Handler                                        Query Handler
+                  │                                                     │
+                  ▼                                                     ▼
+         Aggregate Domain Logic                                     Read Model
+                  │                                        (Denormalized DB View)
+                  ▼                                                     ▲
+         Write DB / Event Store                                         │
+                  │                                                     │
+                  ▼ (Publishes "OrderPlaced")                           │
+           Message Broker (Kafka) ────────────────────────────── Event Projector
+                                   (Asynchronous Synchronization)
 ```
 
-**Read model examples:**
-- SQL view or materialized view (denormalized)
-- Elasticsearch index (for search)
-- Redis cache (for hot data)
-- MongoDB document (for complex nested reads)
+#### 1. The Command Side (Write Pipeline)
+Optimized for transactional throughput and strict business rules.
+- **Flow:** `User Request` $\rightarrow$ `POST /orders (Command)` $\rightarrow$ `Command Handler` $\rightarrow$ `Domain Aggregate` $\rightarrow$ `Write Database / Event Store`.
+- **Action:** The system validates invariants (e.g., _"Is there enough stock?"_), commits the transaction, and pushes a domain event (e.g., `OrderPlaced`) to an asynchronous event broker like Apache Kafka or RabbitMQ.
+#### 2. The Synchronizer (Event Projection Layer)
+The background engine that bridges the two databases without blocking the main application flow.
+- **Flow:** `Message Broker` $\rightarrow$ `Event Projector / Consumer` $\rightarrow$ `Read Database Update`.
+- **Action:** A background worker consumes the event, strips away write-heavy transaction metadata, transforms the payload into a flat structure, and saves it into the Read Model.
+#### 3. The Query Side (Read Pipeline)
+Optimized for rapid lookups and zero-join execution.
+- **Flow:** `User Request` $\rightarrow$ `GET /orders/summary (Query)` $\rightarrow$ `Query Handler` $\rightarrow$ `Read Database` $\rightarrow$ `Instant UI Response`.
+- **Action:** Bypasses all business domain rules entirely. It executes a flat, copy-paste ready read from a specialized store optimized exactly for that view.
+
+### Specialized Read Models by Use-Case:
+- **Elasticsearch Index:** Best for high-performance fuzzy text searching, autocomplete, and complex filtering.
+- **Redis Cache:** Best for sub-millisecond lookups of highly repetitive, hot data.
+- **MongoDB Document Store:** Best for returning complex, highly nested UI components in a single document fetch.
+- **PostgreSQL Materialized View:** Best for denormalized, pre-joined relational tracking.
 
 ### CQRS + Event Sourcing (Often Paired)
+While CQRS can be used with a standard relational database on the write side, it is most frequently paired with **Event Sourcing**.
 
-**Event Sourcing:** Store every state change as an event, not just current state.
+Instead of updating a single row over and over to reflect its current state, an Event-Sourced Write Database treats state as an immutable, append-only log of delta events.
+
+<mark style="background: #ADCCFFA6;">
+**Event Sourcing:** Store every state change as an event, not just current state.</mark>
 ```
 DB stores:
   - OrderPlaced {orderId, customerId, items, total}
@@ -335,17 +352,16 @@ Current state = replay all events for an orderId
 - Replay to rebuild any read model
 
 **Costs of Event Sourcing:**
-- Event store grows indefinitely (need snapshots for old aggregates)
+- <mark style="background: #FFB8EBA6;">Event store grows indefinitely (need snapshots for old aggregates)</mark>
 - Eventual consistency between command and read sides
 - Complex to implement, debug, and query
 - Tooling: Axon Framework (Java), EventStoreDB
 
 ### When to Use CQRS
-
 ✅ Use when:
-- Read and write have very different scaling needs (reads 100x more than writes)
-- Read model needs data from multiple aggregates (denormalized dashboard)
-- Need audit log of all changes (financial, medical records)
+- Read and write have <mark style="background: #FFF3A3A6;">very different scaling needs (reads 100x more than writes)</mark>
+- Read model needs data from multiple aggregates <mark style="background: #ABF7F7A6;">(denormalized dashboard)</mark>
+- <mark style="background: #ADCCFFA6;">Need audit log of all changes</mark> (financial, medical records)
 - Separate teams owning read vs write optimization
 
 ❌ Don't use when:
@@ -355,12 +371,12 @@ Current state = replay all events for an orderId
 
 ### Critical Tradeoffs
 
-| Benefit | Cost |
-|---|---|
-| Write side: clean domain model | Two codebases to maintain |
+| Benefit                        | Cost                                                     |
+| ------------------------------ | -------------------------------------------------------- |
+| Write side: clean domain model | Two codebases to maintain                                |
 | Read side: optimized per query | Eventual consistency (write → event → projection → read) |
-| Independent scaling | Debugging cross-side issues harder |
-| Event replay = free audit log | Event store size grows; need snapshots |
+| Independent scaling            | Debugging cross-side issues harder                       |
+| Event replay = free audit log  | Event store size grows; need snapshots                   |
 
 ### Real Scenario
 > "Design a reporting dashboard for a trading platform. Trades happen 10K/sec. Dashboard shows portfolio summary, P&L, position history."
@@ -370,37 +386,31 @@ Current state = replay all events for an orderId
 **Solution:**
 - Command side: TradeExecutionService writes to PostgreSQL via aggregate
 - Events: TradeExecuted published to Kafka
-- Read model projectors: PortfolioProjector builds Redis-cached portfolio summary; PositionProjector builds Elasticsearch index for position history queries
-- Dashboard queries: Redis (portfolio, <1ms), Elasticsearch (position history, <50ms)
+- Read model projectors: PortfolioProjector builds ==Redis-cached portfolio summary==; PositionProjector builds ==Elasticsearch index for position history queries==
+- Dashboard queries: **Redis (portfolio, <1ms), Elasticsearch (position history, <50ms)**
 
-### Interview Q&A (40L SA Level)
-
+### Interview Q&A
 **Q: What is CQRS and when would you use it?**
-A: CQRS separates the command model — which enforces business rules and changes state — from the query model, which is optimized for reading. I'd use it when read and write have different scaling needs, when the domain model is too complex to also serve denormalized queries, or when I need an audit log via event sourcing. I avoid it for simple CRUD systems — it adds eventual consistency complexity that you don't need unless the problem demands it.
+A: CQRS separates the command model — which enforces business rules and changes state — from the query model, which is optimized for reading. I'd use it <mark style="background: #D2B3FFA6;">when read and write have different scaling needs</mark>, when the domain model is too complex to also serve denormalized queries, or <mark style="background: #ADCCFFA6;">when I need an audit log via event sourcing</mark>. I avoid it for simple CRUD systems — it adds eventual consistency complexity that you don't need unless the problem demands it.
 
 **Q: What is the consistency model in CQRS?**
-A: Eventual consistency between command and read sides. A user places an order (command), the event is published, the projection updates the read model — this takes milliseconds to seconds. The client may read stale data briefly. For most UIs this is fine (optimistic updates help). For critical checks (inventory availability), you query the command-side DB directly, bypassing the read model.
+A: <mark style="background: #FFB86CA6;">Eventual consistency between command and read sides</mark>. A user places an order (command), the event is published, the projection updates the read model — this takes milliseconds to seconds. <mark style="background: #FFB8EBA6;">The client may read stale data briefly. For most UIs this is fine (optimistic updates help)</mark>. <mark style="background: #BBFABBA6;">For critical checks (inventory availability), you **query the command-side DB directly**, bypassing the read model.</mark>
 
 **Q: How do you handle the growing event store in Event Sourcing?**
-A: Snapshots. After N events for an aggregate, save a snapshot of the current state. When replaying, load the last snapshot and only replay events after it. Store old events in cold storage (S3 Glacier). Define a retention policy for events older than your audit requirement (e.g., 7 years for financial data).
+A: **Snapshots**. <mark style="background: #FFF3A3A6;">After N events for an aggregate, save a snapshot of the current state.</mark> <mark style="background: #ADCCFFA6;">When replaying, load the last snapshot and only replay events after it.</mark> Store old events in cold storage (S3 Glacier). Define a retention policy for events older than your audit requirement (e.g., 7 years for financial data).
 
 ### Gotchas
 - CQRS does not require Event Sourcing — they're separate patterns (though often used together)
 - Eventual consistency between command and read side catches many teams off guard in production
 - Don't CQRS everything — apply selectively to the bounded contexts where it solves a real problem
-
 ---
-
 ## Topic 5 · Contract Testing for Microservices
-
 ### In One Line
-Instead of integration tests that spin up real services, contract tests verify that a consumer's expectations and a provider's API are compatible — independently, in CI.
+<mark style="background: #FFB8EBA6;">Instead of integration tests that spin up real services</mark>, <mark style="background: #D2B3FFA6;">contract tests verify that a consumer's expectations and a provider's API are compatible</mark> — independently, in CI.
 
 ### Why It Matters
-In microservices, you have 20 services each evolving independently. How do you prevent Service A from breaking when Service B changes its API? Integration tests are slow, flaky, and require all services running. Contract testing solves this.
-
+In microservices, you have 20 services each evolving independently. <mark style="background: #FFB8EBA6;">How do you prevent Service A from breaking when Service B changes its API?</mark> Integration tests are slow, flaky, and require all services running. <mark style="background: #BBFABBA6;">Contract testing solves this.</mark>
 ### Consumer-Driven Contract Testing — Pact
-
 **The flow:**
 ```
 1. Consumer (Order Service) writes a Pact test:
@@ -420,35 +430,40 @@ In microservices, you have 20 services each evolving independently. How do you p
 ```
 
 **Key principle:** Consumers define what they need, providers verify they deliver it. No shared integration environment required.
-
-### Spring Cloud Contract (Java Ecosystem)
-
+**Pact Broker:** The Pact Broker is ==an open-source application that acts as a central hub for sharing consumer-driven contracts (pacts) and verification results between microservices==. It decouples the release cycles of consumer and provider applications, allowing teams to safely deploy services independently based on real test data.
+### Spring Cloud Contract (Java Ecosystem, Provider )
 Alternative to Pact for Spring-to-Spring services:
-- Provider defines contracts (Groovy DSL or YAML)
-- Contract generates: provider-side tests + consumer-side stubs
-- Consumer uses generated stub in unit tests (WireMock under the hood)
+- Provider defines contracts 
+- Contract generates: provider-side tests + <mark style="background: #D2B3FFA6;">consumer-side stubs</mark>
+- <mark style="background: #D2B3FFA6;">Consumer uses generated stub in unit tests</mark>
 - Tighter Spring integration, easier setup for pure Java shops
 
 **When to choose:**
-- Pact: polyglot (Java → Python, Node → Java)
-- Spring Cloud Contract: Spring-only shop, provider-owns-contract approach
+- ==Pact==: polyglot (Java → Python, Node → Java)
+- ==Spring Cloud Contract==: Spring-only shop, <mark style="background: #FFB86CA6;">provider-owns-contract approach</mark>
 
 ### Contract Testing in CI Pipeline
+#### 1. If using Pact (The Consumer-Driven Broker Model)
+In the Pact ecosystem, the ==**Consumer** controls the timeline==. They write the contract first, upload it to a central hub (Pact Broker), and the **Provider** has to pull it down to verify it.
+##### Consumer CI Pipeline:
+- **Run Tests:** Executes unit tests and generates the local Pact JSON contract file.
+- **Publish:** Uploads the newly generated JSON contract file to the central **Pact Broker**.
+- **Gate Check (`can-i-deploy`):** Queries the Pact Broker to check: _"<mark style="background: #ABF7F7A6;">Has the Provider already run their verification against this specific version of the contract?</mark>"_ If yes, the pipeline passes. If no, deployment is blocked.
+##### Provider CI Pipeline:
+- **Download:** Reaches out to the central **Pact Broker** and fetches all active contracts created by its consumers.
+- **Verify:** Spins up the service, replays the requests from the downloaded contracts, and verifies its own code matches the expectations.
+- **Publish Results:** <mark style="background: #ADCCFFA6;">Uploads a `Pass/Fail` verification matrix result back to the **Pact Broker**</mark>.
+- **Gate Check:** Checks if its current build passes verification before deploying to production.
 
-```
-Consumer CI:
-  - Unit tests (with provider stub from contract)
-  - Generate Pact contract
-  - Publish contract to Pact Broker
-  - "Can I deploy?" check (has provider verified this contract?)
-
-Provider CI:
-  - Unit tests
-  - Download consumer contracts from Pact Broker
-  - Run contract verification tests
-  - Publish verification results
-  - "Can I deploy?" check (will this change break any consumer?)
-```
+#### 2. If using Spring Cloud Contract (The Provider-Driven Artifact Model)
+In the Spring Cloud Contract ecosystem, the ==**Provider** typically owns the contract files== (written in Groovy or YAML) inside their repository. <mark style="background: #D2B3FFA6;">They build stub files and publish them like normal Java dependencies.</mark>
+##### Provider CI Pipeline:
+- **Run Tests:** Generates automated provider-side tests from the <mark style="background: #FFB86CA6;">local contract files (The Provider writes the contract file themselves.)</mark> and runs them against the code.
+- **Generate Stubs:** Compiles the contracts into a lightweight **Stub JAR file**.
+- **Publish:** Uploads this <mark style="background: #ADCCFFA6;">Stub JAR file to a central artifact repository (like **Nexus, Artifactory, or Maven Central**).</mark>
+##### Consumer CI Pipeline:
+- **Download Stub:** Configures its unit tests to <mark style="background: #FFB86CA6;">fetch the latest compiled **Stub JAR file** from Nexus/Artifactory.</mark>
+- **Run Offline Tests:** Uses Spring's `@AutoConfigureStubRunner` to <mark style="background: #ADCCFFA6;">automatically unpack that JAR, spin up an offline mock server using those stubs, and run its consumer unit tests </mark>without hitting the real network.
 
 ### Contract vs Integration vs E2E Testing
 
@@ -458,38 +473,44 @@ Provider CI:
 | **Integration** | Medium (~minutes) | Cross-service logic | Staging/test env |
 | **E2E** | Slow (~hours) | Full user journeys | Full system |
 
-**SA recommendation:** Heavy contract testing (fast, CI-friendly), selective integration testing for complex cross-service flows, minimal E2E for critical user journeys only.
+**SA recommendation:** ==Heavy contract testing (fast, CI-friendly)==, selective integration testing for complex cross-service flows, minimal E2E for critical user journeys only.
 
-### Interview Q&A (40L SA Level)
+| **Feature**                 | **Consumer-Driven (Pact)**                                                                                                    | **Provider-Driven (Spring Cloud Contract)**                                                                             |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Who writes the file?**    | **The Consumer** (Written in Consumer code, uploaded as JSON to Pact Broker).                                                 | **The Provider** (Written in Provider repo as Groovy/YAML/Java).                                                        |
+| **Why the Provider Fails:** | They downloaded a new contract from the Pact Broker, and their existing code doesn't satisfy what the consumer is asking for. | Their own developers changed the application code, but forgot to update their local contract file (or vice versa).      |
+| **Why the Consumer Fails:** | The Pact Broker says "Provider verification failed" or "Not yet verified," blocking deployment via `can-i-deploy`.            | They downloaded the latest Stub JAR from the **Maven Repository**, and their consumer code broke against the new stubs. |
+### Interview Q&A
 
-**Q: How do you prevent API changes in one microservice from breaking consumers?**
-A: Consumer-driven contract testing with Pact. Each consumer codifies its expectations as a contract test — what endpoints it calls, what response shape it needs. Contracts are published to a Pact Broker. In the provider's CI pipeline, it downloads all consumer contracts and verifies it still satisfies them. If a provider change breaks a consumer contract, the provider's build fails before deployment. This catches breaking changes without running a full integration environment.
+**Q: How do you<mark style="background: #FFB86CA6;"> prevent API changes in one microservice from breaking consumers</mark>?**
+A: <mark style="background: #BBFABBA6;">Consumer-driven contract testing with Pact.</mark> Each consumer codifies its expectations as a contract test — what endpoints it calls, what response shape it needs. <mark style="background: #ADCCFFA6;">Contracts are published to a Pact Broker. </mark>In the provider's CI pipeline, it downloads all consumer contracts and verifies it still satisfies them. <mark style="background: #D2B3FFA6;">If a provider change breaks a consumer contract, the provider's build fails before deployment.</mark> This catches breaking changes without running a full integration environment.
 
 **Q: What's the difference between contract testing and integration testing?**
-A: Integration tests verify actual service-to-service behavior in a shared environment — they're slow, brittle, and require all services running. Contract tests verify the API contract (the interface agreement) independently — consumers test against stubs, providers verify against consumer expectations. Contract tests run in seconds in CI; integration tests take minutes and require environment coordination. I use contract tests for every service boundary and reserve integration tests for truly complex orchestration flows.
+A: Integration tests verify actual ==service-to-service behavior in a shared environment== — they're slow, brittle, and <mark style="background: #FFB8EBA6;">require all services running</mark>. <mark style="background: #FFB86CA6;">Contract tests verify the API contract (the interface agreement) independently — consumers test against stubs, providers verify against consumer expectations</mark>. Contract tests run in seconds in CI; integration tests take minutes and require environment coordination. I use contract tests for every service boundary and reserve integration tests for truly complex orchestration flows.
 
 **Q: When would you use Spring Cloud Contract over Pact?**
-A: When all services are Java/Spring — Spring Cloud Contract integrates naturally (Groovy DSL, WireMock stubs, Maven/Gradle plugins). When I have polyglot services (Java consuming a Python API, or Node.js consuming a Java service), I use Pact because it's language-neutral with clients for all major languages.
+A: When all services are Java/Spring — Spring Cloud Contract integrates naturally (Groovy DSL, WireMock stubs, Maven/Gradle plugins). <mark style="background: #BBFABBA6;">When I have polyglot services (Java consuming a Python API, or Node.js consuming a Java service), I use Pact because it's language-neutral with clients for all major languages.</mark>
 
 ### Gotchas
 - Contract testing doesn't replace integration tests — it complements them
-- Pact Broker needs to be part of your deployment pipeline ("can I deploy?" gate)
+- <mark style="background: #ADCCFFA6;">Pact Broker needs to be part of your deployment pipeline</mark> ("can I deploy?" gate)
 - Contracts should be source-controlled by the consumer, not the provider
 
 ---
 
 ## Day 2 Quick Reference
 
-| Topic | Key Interview Answer |
-|---|---|
-| Service Mesh | East-west traffic; mTLS, retries, circuit breaking via sidecars; complements API Gateway |
-| Zero Trust | Never trust, always verify; mTLS + AuthorizationPolicy per service |
-| Istio vs Linkerd | Istio = feature-rich, complex; Linkerd = simple, low overhead |
-| Polyglot | Standardize contracts (OpenAPI/Protobuf) + infrastructure (Docker/k8s/OpenTelemetry); limit approved languages |
-| SPA Auth | JWT in memory + refresh token in HttpOnly cookie; never localStorage |
-| CQRS | Separate write (domain logic) from read (optimized model); eventual consistency; not for CRUD |
-| Event Sourcing | Store events not state; replay = current state; snapshots for performance |
-| Contract Testing | Consumer defines expectations; provider verifies; Pact (polyglot) or Spring Cloud Contract (Java) |
+| Topic            | Key Interview Answer                                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------------------------------- |
+| Service Mesh     | East-west traffic; mTLS, retries, circuit breaking via sidecars; complements API Gateway                       |
+| Zero Trust       | Never trust, always verify; mTLS + AuthorizationPolicy per service                                             |
+| Istio vs Linkerd | Istio = feature-rich, complex; Linkerd = simple, low overhead                                                  |
+| Polyglot         | Standardize contracts (OpenAPI/Protobuf) + infrastructure (Docker/k8s/OpenTelemetry); limit approved languages |
+| SPA Auth         | JWT in memory + refresh token in HttpOnly cookie; never localStorage                                           |
+| CQRS             | Separate write (domain logic) from read (optimized model); eventual consistency; not for CRUD                  |
+| Event Sourcing   | Store events not state; ==replay = current state==; ==snapshots for performance==                              |
+| Contract Testing | Consumer defines expectations; provider verifies; Pact (polyglot) or Spring Cloud Contract (Java)              |
+|                  |                                                                                                                |
 
 ---
 
@@ -512,3 +533,5 @@ A: When all services are Java/Spring — Spring Cloud Contract integrates natura
 [^7]: **[Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html)** is ==a centralized repository and service layer that provides a RESTful interface for storing, managing, and versioning schemas used in Apache Kafka data pipelines==. It serves as a contract arbitrator between decoupled applications, ensuring data quality and consistency as schemas evolve over time.
 
 [^8]: **Cross-Origin Resource Sharing (CORS)** is ==a browser security mechanism that allows a web page from one domain to request and access resources from a different domain==. By default, browsers enforce the Same-Origin Policy (SOP), which blocks cross-domain requests unless the server explicitly permits them using specific HTTP response headers.
+
+
