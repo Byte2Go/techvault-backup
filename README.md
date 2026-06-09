@@ -22,6 +22,15 @@ To get the best reading and navigation experience, please follow the instruction
 
 ---
 
+## 🏠 Entry Points
+
+- **Index.md** → Covers a wide variety of topics, serving as a structured starting point.  
+- **index_v1.md** → An alternate entry path with a different organization style.  
+
+👉 You can choose **either path** depending on your preferred way of exploring the notes. Both are valid home entry points.
+
+---
+
 ## 🔗 Why Obsidian?
 
 - All notes are **interconnected** using Obsidian’s graph view and backlinks.  
@@ -42,4 +51,3 @@ To get the best reading and navigation experience, please follow the instruction
 
 This repository is for personal/professional knowledge management.  
 Feel free to fork and adapt, but please respect the original structure.
-
