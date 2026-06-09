@@ -6,10 +6,10 @@
 
 ---
 
-## Topic 1 · Spring Boot Microservice Structure & Clean Architecture
+## Topic 1 · [[Spring Boot Microservice Structure & Clean Architecture]]
 
 ### In One Line
-A well-structured Spring Boot service separates concerns into layers — each with a single responsibility — so the domain stays pure and infrastructure is swappable.
+A well-structured Spring Boot service separates concerns into layers — each with a single responsibility — so the<mark style="background: #ABF7F7A6;"> domain stays pure</mark> and <mark style="background: #FFB86CA6;">infrastructure is swappable.</mark>
 
 ### Why It Matters
 Java Architect interviews always ask: "How do you structure a Spring Boot service?" The wrong answer is "controller → service → repository." The right answer shows you understand why layers exist and how to keep business logic clean.
@@ -18,10 +18,10 @@ Java Architect interviews always ask: "How do you structure a Spring Boot servic
 
 ```
 com.company.orderservice
-├── api/                        ← Inbound adapters (REST controllers, gRPC handlers)
+├── api/                     ← Inbound adapters (REST controllers, gRPC handlers)
 │   ├── OrderController.java
-│   └── dto/                   ← Request/Response DTOs (never domain objects here)
-├── application/               ← Use cases / Application services (orchestration only)
+│   └── dto/              ← Request/Response DTOs (never domain objects here)
+├── application/          ← Use cases / Application services (orchestration only)
 │   ├── PlaceOrderUseCase.java
 │   └── command/               ← Command objects
 ├── domain/                    ← Pure business logic — NO Spring annotations
@@ -40,74 +40,25 @@ com.company.orderservice
 ```
 
 **Dependency rule:** api → application → domain ← infrastructure  
-Domain never imports infrastructure. Infrastructure implements domain interfaces.
+<mark style="background: #ADCCFFA6;">Domain never imports infrastructure. Infrastructure implements domain interfaces.</mark>
 
-### Key Spring Boot Annotations (what they actually mean)
+### [[Spring Boot Annotations - App Layer Wise]]
 
-| Annotation | Purpose | SA Gotcha |
-|---|---|---|
-| `@Service` | Marks application/domain service | Don't put it on domain objects — domain is POJO |
-| `@Repository` | Marks persistence layer + exception translation | Use on JPA implementations, not domain interfaces |
-| `@Transactional` | Wraps method in DB transaction | Only on application services, not domain |
-| `@Component` | Generic Spring bean | Avoid overuse — be explicit about layer |
-| `@RestController` | HTTP handler + `@ResponseBody` | Controllers = thin; delegate to use case |
-| `@ConfigurationProperties` | Type-safe config binding | Prefer over `@Value` for structured config |
-
-### Application Service Pattern
-```java
-@Service
-@Transactional
-public class PlaceOrderApplicationService {
-    
-    private final OrderRepository orderRepository;
-    private final CustomerRepository customerRepository;
-    private final DomainEventPublisher eventPublisher;
-    
-    public OrderId placeOrder(PlaceOrderCommand cmd) {
-        // 1. Load aggregates
-        Customer customer = customerRepository.findById(cmd.customerId())
-            .orElseThrow(() -> new CustomerNotFoundException(cmd.customerId()));
-        
-        // 2. Execute domain logic (domain knows nothing about Spring)
-        Order order = customer.placeOrder(cmd.items(), cmd.shippingAddress());
-        
-        // 3. Persist
-        orderRepository.save(order);
-        
-        // 4. Publish domain events
-        eventPublisher.publishAll(order.domainEvents());
-        
-        return order.id();
-    }
-}
-```
-
-### Spring Security + OAuth2 (brief — full coverage in P4 Day 5)
-```java
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
-    @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(s -> s.sessionCreationPolicy(STATELESS))
-            .build();
-    }
-}
-```
+| Annotation                 | Purpose                                         | SA Gotcha                                             |
+| -------------------------- | ----------------------------------------------- | ----------------------------------------------------- |
+| `@Service`                 | Marks application/domain service                | Don't put it on domain objects — domain is POJO       |
+| `@Repository`              | Marks persistence layer + exception translation | ==Use on JPA implementations==, not domain interfaces |
+| `@Transactional`           | Wraps method in DB transaction                  | Only on ==application services==, not domain          |
+| `@Component`               | ==Generic Spring bean==                         | Avoid overuse — be explicit about layer               |
+| `@RestController`          | HTTP handler + `@ResponseBody`                  | Controllers = thin; delegate to use case              |
+| `@ConfigurationProperties` | Type-safe config binding                        | Prefer over `@Value` for structured config            |
 
 ---
 
 ## Topic 2 · JPA / Hibernate Deep Dive
 
 ### In One Line
-JPA is the abstraction; Hibernate is the implementation — you need to know both to avoid the performance disasters that kill production Java systems.
+<mark style="background: #ADCCFFA6;">JPA is the abstraction; Hibernate is the implementation</mark> — you need to know both to avoid the performance disasters that kill production Java systems.
 
 ### Why It Matters
 N+1 queries, lazy loading exceptions, transaction boundaries — these are the most common Java Architect interview traps. Every SA with Java depth needs to nail these.

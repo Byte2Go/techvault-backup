@@ -2,6 +2,7 @@
 Think of a Kubernetes cluster using a corporate organizational hierarchy:
 - **The Control Plane (Master Node):** Acts like the **Board of Directors**. They evaluate high-level business goals, plan layouts, and give top-down commands, but they do not do the physical ground labor 
 - **The Worker Nodes:** Act like the **Factory Workers**. This is where raw physical compute resources are used to build and execute the actual workloads.
+- **K8S Cluster =** Master Node + Worker Node
 ![[Pasted image 20260607222532.png]]
 ## 1. The Physical Layer (What is a Node?)
 - **Definition:** A **Node** inside Kubernetes is simply a standard computer instance—most commonly a **Virtual Machine (VM)**.

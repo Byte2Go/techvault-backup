@@ -63,3 +63,19 @@ Kubernetes uses **three distinct types of probes** inside your `order-deployment
 | **1. Startup Probe**<br><br>_(The Shield)_               | _"Is the application process finished initializing yet?"_                 | **K8s kills the container** and restarts it.                        | ==Prevents slow-starting apps from getting killed prematurely==  by the liveness probe before they even finish booting.     |
 | **2. Readiness Probe**<br><br>_(The Traffic Gatekeeper)_ | _"==Is the app ready to process live customer requests==?"_               | **K8s keeps the container running but cuts off web traffic** to it. | ==Prevents users from getting `500 Internal Server Errors`== during a heavy database migration or high-load crunch.         |
 | **3. Liveness Probe**<br><br>_(The Executioner)_         | _"Is the ==app still healthy==, or is it permanently frozen/deadlocked?"_ | **K8s instantly kills the container** and boots a fresh one.        | Automatically ==self-heals applications== that suffer from deadlocks or internal thread lockups without human intervention. |
+<mark style="background: #FFB86CA6;">**IMP Note:**</mark> A **Liveness Probe** failure results in a death sentence (a container restart). You should never execute a pod because _someone else_ (an external service) is sick.
+
+<mark style="background: #BBFABBA6;">Keep your liveness probes tightly focused on the internal health of the container itself,</mark> and leave external ecosystem tracking to your readiness checks.
+
+```
+ ┌────────────────────────────────────────────────────────────────────────┐
+ │ APPLICATION CONTAINER                                                  │
+ │                                                                        │
+ │  /livez ──► [ Internal Process Check Only ] ──► Returns 200 OK         │
+ │              (Is my internal loop running? No external network calls)  │
+ │                                                                        │
+ │  /readyz ─► [ Dependency Status Check ]    ──► Pings Database/APIs     │
+ │              (Can I actually do work right now?)                       │
+ └────────────────────────────────────────────────────────────────────────┘
+```
+

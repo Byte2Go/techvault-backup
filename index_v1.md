@@ -30,3 +30,7 @@
 [[Day12_PaymentAPI_SPA_TestingStrategy]]
 
 
+---
+- Last critical design decision made
+- Explain your Kafka Project Architecture
+- Recent GenAI Project Solution Design
