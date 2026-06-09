@@ -55,161 +55,15 @@ com.company.orderservice
 
 ---
 
-## Topic 2 · JPA / Hibernate Deep Dive
-
-### In One Line
-<mark style="background: #ADCCFFA6;">JPA is the abstraction; Hibernate is the implementation</mark> — you need to know both to avoid the performance disasters that kill production Java systems.
-
-### Why It Matters
-N+1 queries, lazy loading exceptions, transaction boundaries — these are the most common Java Architect interview traps. Every SA with Java depth needs to nail these.
-
-### Entity Mapping Fundamentals
-
-```java
-@Entity
-@Table(name = "orders")
-public class Order {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_seq")
-    @SequenceGenerator(name = "order_seq", sequenceName = "order_id_seq", allocationSize = 50)
-    private Long id;
-    
-    @Column(nullable = false)
-    private String status;
-    
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, 
-               fetch = FetchType.LAZY, orphanRemoval = true)
-    private List<OrderLine> lines = new ArrayList<>();
-    
-    @Version  // Optimistic locking
-    private Long version;
-}
-```
-
-**`allocationSize = 50`** — Hibernate pre-allocates 50 IDs in memory; one DB call per 50 inserts (not 1 DB call per insert).
-
-### The N+1 Problem — Most Common Interview Question
-
-**Problem:**
-```java
-// WRONG — N+1 queries
-List<Order> orders = orderRepository.findAll();  // 1 query: SELECT * FROM orders
-for (Order o : orders) {
-    o.getLines().size();  // N queries: SELECT * FROM order_lines WHERE order_id = ?
-}
-// If 100 orders → 101 database queries
-```
-
-**Fix 1 — JPQL JOIN FETCH:**
-```java
-@Query("SELECT o FROM Order o JOIN FETCH o.lines WHERE o.status = :status")
-List<Order> findWithLinesByStatus(@Param("status") String status);
-```
-
-**Fix 2 — EntityGraph:**
-```java
-@EntityGraph(attributePaths = {"lines", "customer"})
-List<Order> findAll();
-```
-
-**Fix 3 — @BatchSize (Hibernate-specific):**
-```java
-@OneToMany(fetch = FetchType.LAZY)
-@BatchSize(size = 50)  // Loads 50 collections in one query instead of N
-private List<OrderLine> lines;
-```
-
-### Lazy Loading — LazyInitializationException
-
-**Problem:** Access lazy association outside a transaction:
-```java
-// In Service (transaction closes after method returns)
-Order order = orderRepository.findById(id).get();
-// Transaction closed here
-order.getLines().size();  // LazyInitializationException — session closed!
-```
-
-**Fix:** Load what you need inside the transaction:
-```java
-@Transactional(readOnly = true)
-public OrderDetailDto getOrderDetail(Long id) {
-    Order order = orderRepository.findWithLinesById(id);  // JOIN FETCH in query
-    return mapper.toDto(order);  // DTO created inside transaction
-}
-```
-
-> Rule: **Open Session in View is an anti-pattern** — it hides N+1 problems. Disable it (`spring.jpa.open-in-view=false`).
-
-### Transaction Management
-
-**Propagation types:**
-| Propagation | Behavior |
-|---|---|
-| `REQUIRED` (default) | Join existing tx; create new if none |
-| `REQUIRES_NEW` | Suspend outer tx; create own tx |
-| `NESTED` | Savepoint within outer tx |
-| `SUPPORTS` | Join if exists; run without tx if none |
-
-**`REQUIRES_NEW` use case:**
-```java
-// Audit log must be written even if main transaction rolls back
-@Transactional(propagation = Propagation.REQUIRES_NEW)
-public void writeAuditLog(AuditEvent event) {
-    auditRepository.save(event);
-}
-```
-
-**Isolation levels:**
-| Level | Dirty Read | Non-Repeatable Read | Phantom Read |
-|---|---|---|---|
-| READ_UNCOMMITTED | ✅ possible | ✅ possible | ✅ possible |
-| READ_COMMITTED | ❌ | ✅ possible | ✅ possible |
-| REPEATABLE_READ | ❌ | ❌ | ✅ possible |
-| SERIALIZABLE | ❌ | ❌ | ❌ |
-
-> Default in PostgreSQL = READ_COMMITTED. For financial operations, use REPEATABLE_READ.
-
-### Optimistic vs Pessimistic Locking
-
-**Optimistic Locking (preferred for low-contention):**
-```java
-@Version
-private Long version;
-
-// Hibernate checks version on UPDATE
-// UPDATE orders SET ..., version = 6 WHERE id = 1 AND version = 5
-// If version mismatch → OptimisticLockException → retry
-```
-
-**Pessimistic Locking (for high-contention, must-win scenarios):**
-```java
-@Lock(LockModeType.PESSIMISTIC_WRITE)
-@Query("SELECT o FROM Order o WHERE o.id = :id")
-Optional<Order> findByIdForUpdate(@Param("id") Long id);
-// SELECT ... FOR UPDATE — DB row lock
-```
-
-### Interview Q&A (40L Java Architect Level)
-
-**Q: How do you diagnose and fix N+1 queries in a production Spring app?**
-A: First, enable Hibernate stats (`spring.jpa.properties.hibernate.generate_statistics=true`) or use p6spy to log actual SQL. You'll see 101 queries where you expect 1. Fix with JOIN FETCH in JPQL for one-off queries, or @EntityGraph for repository methods. For batch scenarios, @BatchSize(size=50) reduces N queries to N/50. Also disable `open-in-view` — it masks N+1 problems by keeping the session open through rendering.
-
-**Q: What is the difference between optimistic and pessimistic locking? When do you use each?**
-A: Optimistic locking uses a version column — read optimistically, check on write that no one else modified it since you read. Low DB overhead, great for low-contention writes. Pessimistic locking locks the row at the DB level (SELECT FOR UPDATE) — nothing else can modify it until you commit. Use optimistic for most business operations; use pessimistic only when you can't afford a retry (e.g., allocating a unique seat number, decrementing inventory in a flash sale).
-
-**Q: Explain Spring @Transactional propagation — when would you use REQUIRES_NEW?**
-A: REQUIRED (default) joins an existing transaction or creates one. REQUIRES_NEW always creates a new independent transaction, suspending the outer one. Use case: audit logging or sending notifications that must persist even if the main transaction rolls back. Example: in an order placement flow, if payment fails and we rollback, the audit log of "payment attempted" should still be written — so the audit write uses REQUIRES_NEW.
+## Topic 2 · [[JPA Hibernate Deep Dive]]
 
 ---
-
 ## Topic 3 · JVM Tuning & Garbage Collection
 
 ### In One Line
 Understanding JVM heap, GC algorithms, and tuning flags separates a senior Java dev from a Java Architect — interviewers ask this to test depth.
 
 ### Memory Regions
-
 ```
 JVM Memory:
 ├── Heap
@@ -228,15 +82,14 @@ JVM Memory:
 
 ### GC Algorithms
 
-| GC | Java Version | Best For | Latency |
-|---|---|---|---|
-| **G1GC** | Default (Java 9+) | General purpose, balanced | Low-medium |
-| **ZGC** | Java 15+ (stable) | Ultra-low latency (sub-millisecond pauses) | Very low |
-| **Shenandoah** | OpenJDK | Low-pause, concurrent | Very low |
-| **ParallelGC** | Older apps | High throughput, accepts pauses | High |
-| **SerialGC** | Single-core containers | Minimal memory overhead | High |
+| GC             | Java Version           | Best For                                       | Latency    |
+| -------------- | ---------------------- | ---------------------------------------------- | ---------- |
+| **G1GC**       | ==Default (Java 9+)==  | General purpose, balanced                      | Low-medium |
+| **ZGC**        | Java 15+ (stable)      | ==Ultra-low latency (sub-millisecond pauses)== | Very low   |
+| **ParallelGC** | Older apps             | High throughput, accepts pauses                | High       |
+| **SerialGC**   | Single-core containers | Minimal memory overhead                        | High       |
 
-**For microservices in containers:** G1GC is default and good. For latency-sensitive services (payment processing, real-time APIs), evaluate ZGC (Java 17+).
+**For microservices in containers:** ==G1GC is default and good.== For latency-sensitive services (payment processing, real-time APIs), evaluate ZGC (Java 17+).
 
 ### Key JVM Flags
 
@@ -260,25 +113,24 @@ JVM Memory:
 
 ### Memory Leak Pattern Recognition
 
-| Symptom | Likely Cause |
-|---|---|
-| Old Gen grows indefinitely | Cache without eviction, static collections, listener not unregistered |
-| Metaspace OOM | Class loader leak (dynamic class generation, old framework) |
-| Native memory grows | Direct ByteBuffer leak, JNI |
-| Frequent young GC | Too many short-lived objects; check if domain objects are over-allocated |
+| Symptom                    | Likely Cause                                                                 |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| Old Gen grows indefinitely | Cache without eviction, static collections, listener not unregistered        |
+| Metaspace OOM              | Class loader leak (dynamic class generation, old framework)                  |
+| Native memory grows        | Direct ByteBuffer leak, JNI                                                  |
+| Frequent young GC          | ==Too many short-lived objects==; check if domain objects are over-allocated |
 
 **Heap dump analysis tools:** VisualVM, Eclipse MAT (Memory Analyzer Tool), JDK Mission Control
 
 ---
-
-## Topic 4 · Concurrency Patterns in Java
+## Topic 4 · [[Concurrency Patterns in Java]]
 
 ### In One Line
-Java concurrency — locks, thread pools, CompletableFuture — is tested to see if you understand how to write safe, efficient parallel code and what can go wrong.
+Java concurrency — <mark style="background: #FFB86CA6;">locks, thread pools, CompletableFuture</mark> — is tested to see if you understand how to write safe, efficient parallel code and what can go wrong.
 
 ### Thread Safety Fundamentals
 
-**Synchronized (intrinsic lock):**
+**Synchronized:**
 ```java
 public class Counter {
     private int count = 0;
@@ -330,7 +182,6 @@ public void write(String key, String value) {
 ```
 
 ### CompletableFuture — Async Orchestration
-
 ```java
 // Sequential async pipeline
 CompletableFuture<Order> future = CompletableFuture
@@ -366,13 +217,13 @@ CompletableFuture.supplyAsync(() -> callExternalService(), ioPool);
 
 ### Common Concurrency Pitfalls
 
-| Pitfall | Problem | Fix |
-|---|---|---|
-| Using `HashMap` in shared state | Not thread-safe, data corruption | `ConcurrentHashMap` |
-| Using `++count` without sync | Non-atomic read-modify-write | `AtomicInteger.incrementAndGet()` |
-| Blocking in `ForkJoinPool` | Starves other async tasks | Use dedicated thread pool for blocking I/O |
-| Deadlock | Thread A holds lock1, waits for lock2; Thread B holds lock2, waits for lock1 | Consistent lock ordering; tryLock with timeout |
-| Thread pool saturation | All threads blocked waiting for downstream | Circuit breaker + bulkhead (separate pools) |
+| Pitfall                         | Problem                                                                      | Fix                                            |
+| ------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------- |
+| Using `HashMap` in shared state | Not thread-safe, data corruption                                             | `ConcurrentHashMap`                            |
+| Using `++count` without sync    | Non-atomic read-modify-write                                                 | `AtomicInteger.incrementAndGet()`              |
+| Blocking in `ForkJoinPool`      | Starves other async tasks                                                    | Use dedicated thread pool for blocking I/O     |
+| Deadlock                        | Thread A holds lock1, waits for lock2; Thread B holds lock2, waits for lock1 | Consistent lock ordering; tryLock with timeout |
+| Thread pool saturation          | All threads blocked waiting for downstream                                   | Circuit breaker + bulkhead (separate pools)    |
 
 ### Distributed Lock with Redis (Redisson)
 
@@ -392,23 +243,23 @@ if (acquired) {
 }
 ```
 
-### Interview Q&A (40L Java Architect Level)
+### Interview Q&A
 
 **Q: What is the difference between synchronized and ReentrantLock?**
-A: `synchronized` is simpler — JVM-managed intrinsic lock, automatic release even on exception, but no timeout, no tryLock, and can't be interrupted while waiting. `ReentrantLock` is explicit — you can tryLock with timeout (avoids deadlock), interrupt waiting threads, and use Condition variables for finer signaling control. I default to synchronized for simple cases and ReentrantLock when I need timeout or fair lock ordering.
+A: `synchronized` <mark style="background: #FFB86CA6;">is simpler — JVM-managed lock, automatic release even on exception, but no timeout, no tryLock, and can't be interrupted while waiting</mark>. `ReentrantLock` is <mark style="background: #ABF7F7A6;">explicit — you can tryLock with timeout (avoids deadlock), interrupt waiting threads, and use Condition variables for finer signaling control.</mark> I default to synchronized for simple cases and ReentrantLock when I need timeout or fair lock ordering.
 
 **Q: How do you parallelize multiple external service calls in Spring?**
-A: CompletableFuture with allOf. Call each external service with `supplyAsync` on a dedicated I/O thread pool (not ForkJoinPool — those threads shouldn't block). Combine with `allOf` to wait for all, then join each result. Add timeouts with `orTimeout()` (Java 9+) and handle failures with `exceptionally` or `handle`. Key: never use the default ForkJoinPool for blocking HTTP calls — it starves other async work.
+A: <mark style="background: #FFF3A3A6;">CompletableFuture</mark> with allOf. Call each external service with `supplyAsync` <mark style="background: #ADCCFFA6;">on a dedicated I/O thread pool </mark>(not ForkJoinPool — those threads shouldn't block). Combine with `allOf` to wait for all, then join each result. Add timeouts with `orTimeout()` (Java 9+) and handle failures with `exceptionally` or `handle`. Key: never use the default ForkJoinPool for blocking HTTP calls — it starves other async work.
 
 **Q: How do you implement a distributed lock in a microservices system?**
-A: Redis with Redisson's RLock. It uses the Redlock algorithm — lock is set with a TTL (so it auto-expires if the service dies without releasing). Use tryLock with a wait timeout and a hold timeout. This prevents two instances of the same service from processing the same order simultaneously. Important: always release in a finally block, and size the TTL conservatively beyond your expected operation time.
+A: <mark style="background: #ADCCFFA6;">Redis with Redisson's RLock</mark>. It uses the Redlock algorithm — <mark style="background: #D2B3FFA6;">lock is set with a TTL</mark> (so it auto-expires if the service dies without releasing). Use tryLock with a wait timeout and a hold timeout. This prevents two instances of the same service from processing the same order simultaneously. Important: always release in a finally block, and size the TTL conservatively beyond your expected operation time.
 
 ---
 
 ## Topic 5 · Testing Strategy — Spring Ecosystem
 
 ### In One Line
-Effective Spring testing uses a layered strategy: unit tests for domain logic, slice tests for layers, integration tests for full flows, contract tests for API boundaries.
+Effective Spring testing uses a layered strategy: <mark style="background: #FFB86CA6;">unit tests for domain logic</mark>, slice tests for layers, <mark style="background: #ADCCFFA6;">integration tests for full flows</mark>, <mark style="background: #ABF7F7A6;">contract tests for API boundaries</mark>.
 
 ### Test Pyramid for Spring Microservices
 
@@ -555,32 +406,106 @@ given(paymentService.processPayment(any())).willReturn(paymentConfirmation());
 willThrow(new PaymentDeclinedException()).given(paymentService).processPayment(failingRequest());
 ```
 
-### Interview Q&A (40L Java Architect Level)
+### Interview Q&A
 
 **Q: How do you structure tests for a Spring Boot microservice?**
-A: Three levels. Pure unit tests for domain logic — no Spring context, fast, cover all business rules and edge cases. Slice tests for each layer — @WebMvcTest for controllers (HTTP, validation, error handling), @DataJpaTest for repositories (queries, indexes). Integration tests with Testcontainers for the full stack — real PostgreSQL, real Kafka — covering end-to-end flows. Contract tests via Pact or Spring Cloud Contract for the service API boundary. This gives fast feedback at unit level and confidence at integration level without needing all services running.
+A: Three levels. <mark style="background: #D2B3FFA6;">Pure unit tests for domain logic — no Spring context, fast, cover all business rules and edge cases</mark>. <mark style="background: #ADCCFFA6;">Slice tests for each layer — @WebMvcTest for controllers (HTTP, validation, error handling), @DataJpaTest for repositories (queries, indexes). Integration tests with Testcontainers for the full stack — real PostgreSQL, real Kafka — covering end-to-end flows</mark>. <mark style="background: #FFF3A3A6;">Contract tests via Pact or Spring Cloud Contract for the service API boundary. </mark>This gives fast feedback at unit level and confidence at integration level without needing all services running.
 
 **Q: What is the difference between @Mock and @Spy in Mockito?**
-A: @Mock creates a full mock — every method returns null/empty/0 by default, nothing real runs. @Spy wraps a real object — real methods run unless you stub a specific one. Use @Mock for dependencies you don't want to run (database, external service). Use @Spy when you want to test the real behavior of most methods but override one specific method (e.g., stub a private helper but test the real public method).
+A: <mark style="background: #ADCCFFA6;">@Mock creates a full mock</mark> — every method returns null/empty/0 by default, <mark style="background: #ADCCFFA6;">nothing real runs.</mark> <mark style="background: #FFF3A3A6;">@Spy wraps a real object</mark> — <mark style="background: #FFF3A3A6;">real methods run unless you stub a specific one</mark>. Use @Mock for dependencies you don't want to run (database, external service). Use @Spy when you want to test the real behavior of most methods but override one specific method (e.g., stub a private helper but test the real public method).
+
+Let’s look at a concrete example using a standard `Calculator` class to see exactly how they behave differently.
+```Java
+public class Calculator {
+    public int add(int a, int b) {
+        return a + b; // Real behavior: actually calculates the sum
+    }
+}
+```
+
+## 1. `@Mock` (The Hollow Shell)
+When you tell Mockito to create a `@Mock` of your `Calculator`, Mockito creates a brand-new, completely fake object that _looks_ like a calculator on the outside, but has **zero real code inside it**.
+```Java
+@Mock
+Calculator mockCalc;
+
+// Test Execution:
+int result = mockCalc.add(2, 3); 
+System.out.println(result); // Prints: 0
+```
+
+- **What happened?** Mockito completely intercepted the call. Because it is a full mock, the real code inside the `add` method (`return a + b;`) **never ran**.
+- **The Default Rule:** By default, every single method on a `@Mock` returns a default blank value: `0` for numbers, `null` for objects, and `false` for booleans. It will _only_ return something else if you manually hardcode it using a stub (e.g., `when(mockCalc.add(2,3)).thenReturn(5);`).
+
+## 2. `@Spy` (The Wire-Tapped Real Object)
+When you create a `@Spy`, you start with a **living, breathing, real instance** of your class. Mockito simply wraps a sneaky tracking layer around it.
+```Java
+@Spy
+Calculator spyCalc = new Calculator(); // Notice you initialize a REAL object here
+
+// Test Execution:
+int result = spyCalc.add(2, 3);
+System.out.println(result); // Prints: 5
+```
+
+- **What happened?** The **real, actual code** inside the `add` method executed perfectly, calculated `2 + 3`, and returned `5`.
+- **The Spy's Superpower:** Because it is wire-tapped, Mockito silently stands in the background logging everything that happens. You can now verify if the method was called:
+    ```Java
+    verify(spyCalc).add(2, 3); // Mockito can confirm: "Yes, this real method ran!"
+    ```
+
+## 3. The Partial Override (Why we use Spies)
+The main reason architects use a `@Spy` is when they want the object to act completely real, _except_ for one specific method that they want to forcefully override.
+Imagine our real calculator has a method that fetches live exchange rates from the internet:
+```Java
+public class FinancialCalculator {
+    public double getLiveExchangeRate() {
+        // Imagine this connects to the internet and talks to a real bank API
+    }
+    
+    public double calculateTotalTax(double amount) {
+        double rate = getLiveExchangeRate(); // Uses the internet method
+        return amount * rate;
+    }
+}
+```
+
+If you are running a unit test, you don't want your test to fail just because the bank's website is down. You use a `@Spy` to run the real tax calculations, but hardcode _only_ the internet method:
+```Java
+@Spy
+FinancialCalculator spyCalc = new FinancialCalculator();
+
+// Tell the spy to fake the internet method, but leave everything else real
+doReturn(1.2).when(spyCalc).getLiveExchangeRate();
+
+// Test Execution:
+double tax = spyCalc.calculateTotalTax(100); 
+// 1. calculateTotalTax runs its REAL logic!
+// 2. When it hits getLiveExchangeRate(), it uses your fake value (1.2) instead of the internet!
+```
+
+### Summary Checklist for Your Mental Map
+- **`@Mock`:** A completely hollow proxy shell. No real code runs. Everything returns `null` or `0` unless you manually configure it. (Use for: Heavy things like external APIs or Databases).
+- **`@Spy`:** A real, functional object. The real logic executes normally, but you have the power to selectively override individual methods when needed. (Use for: Testing real class logic while bypassing an troublesome internal helper method).
 
 **Q: How do you test code that calls an external HTTP service?**
-A: WireMock. It starts a local HTTP server that you configure to return specific responses or simulate errors and delays. Your service under test points to WireMock's port instead of the real service URL. This lets you test timeout handling, retry logic, and error responses without hitting real external systems. In Spring Boot, @AutoConfigureWireMock handles startup automatically. For more complex scenarios, use WireMock's request matching and response templating.
+A: <mark style="background: #FFB86CA6;">WireMock. It starts a local HTTP server that you configure to return specific responses or simulate errors and delays.</mark> Your service under test points to WireMock's port instead of the real service URL. This lets you test timeout handling, retry logic, and error responses without hitting real external systems. In Spring Boot, @AutoConfigureWireMock handles startup automatically. For more complex scenarios, use WireMock's request matching and response templating.
 
 ---
 
 ## Day 3 Quick Reference
 
-| Topic | Key Interview Answer |
-|---|---|
+| Topic              | Key Interview Answer                                                                            |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
 | Clean Architecture | Domain layer is POJO — no Spring; application service orchestrates; infra implements interfaces |
-| N+1 | JOIN FETCH in JPQL or @EntityGraph; disable open-in-view; measure with stats |
-| @Transactional | REQUIRED = join or create; REQUIRES_NEW = independent tx (audit logs, notifications) |
-| Optimistic Lock | @Version — low contention, retryable; Pessimistic — high contention, must-win |
-| CompletableFuture | allOf for parallel calls; custom thread pool for blocking I/O; orTimeout for deadlines |
-| JVM in containers | -XX:+UseContainerSupport + -XX:MaxRAMPercentage=75.0 |
-| GC choice | G1GC default; ZGC for sub-ms pause (Java 17+, payment/RT services) |
-| Test pyramid | Unit (domain, pure) → Slice (@WebMvcTest, @DataJpaTest) → Integration (Testcontainers) |
-| WireMock | Simulate external HTTP service — timeouts, errors, latency — no real calls needed |
+| N+1                | JOIN FETCH in JPQL or @EntityGraph; disable open-in-view; measure with stats                    |
+| @Transactional     | REQUIRED = join or create; REQUIRES_NEW = independent tx (audit logs, notifications)            |
+| Optimistic Lock    | @Version — low contention, retryable; Pessimistic — high contention, must-win                   |
+| CompletableFuture  | allOf for parallel calls; custom thread pool for blocking I/O; orTimeout for deadlines          |
+| JVM in containers  | -XX:+UseContainerSupport + -XX:MaxRAMPercentage=75.0                                            |
+| GC choice          | G1GC default; ZGC for sub-ms pause (Java 17+, payment/RT services)                              |
+| Test pyramid       | Unit (domain, pure) → Slice (@WebMvcTest, @DataJpaTest) → Integration (Testcontainers)          |
+| WireMock           | Simulate external HTTP service — timeouts, errors, latency — no real calls needed               |
 
 ---
 
