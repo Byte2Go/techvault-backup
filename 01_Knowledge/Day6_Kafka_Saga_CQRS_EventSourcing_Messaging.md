@@ -9,8 +9,9 @@
 ## Topic 1 · Kafka Architecture — Deep Dive
 
 ### In One Line
-Kafka is a distributed, durable, ordered, replayable event log — not just a message queue — and understanding its internals is what separates a 40L SA from a developer who "knows Kafka."
+Kafka is a distributed, durable, ordered, replayable **event log** —<mark style="background: #FFB8EBA6;"> not just a message queue.</mark>
 
+**The Critical Difference:** <mark style="background: #FFF3A3A6;">Traditional message queues (like RabbitMQ) delete messages immediately after consumer acknowledgment</mark>. <mark style="background: #ABF7F7A6;">Kafka retains messages as an immutable sequence of byte arrays</mark>, <mark style="background: #D2B3FFA6;">shifting the burden of tracking state entirely onto the consumers </mark><mark style="background: #ADCCFFA6;">via their read offsets.</mark>
 ### Core Concepts
 
 ```
