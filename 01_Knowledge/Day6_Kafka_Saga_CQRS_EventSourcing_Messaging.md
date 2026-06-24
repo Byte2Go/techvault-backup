@@ -12,36 +12,31 @@
 Kafka is a distributed, durable, ordered, replayable **event log** —<mark style="background: #FFB8EBA6;"> not just a message queue.</mark>
 
 **The Critical Difference:** <mark style="background: #FFF3A3A6;">Traditional message queues (like RabbitMQ) delete messages immediately after consumer acknowledgment</mark>. <mark style="background: #ABF7F7A6;">Kafka retains messages as an immutable sequence of byte arrays</mark>, <mark style="background: #D2B3FFA6;">shifting the burden of tracking state entirely onto the consumers </mark><mark style="background: #ADCCFFA6;">via their read offsets.</mark>
+
+[[Kafka-Introduction]]
+[[Kafka Part 1 — Physical Layer- Brokers and Cluster]]
+[[Kafka- Part 2 — Storage Layer- Topics and Partitions]]
+[[Kafka -Part 2 — Storage Layer- The Offset Log]]
+[[Kafka -  Part 3 — Coordination Layer- Leaders and Followers]]
+[[Kafka- Part 4 — Failure Recovery Layer- Leader Election]]
+[[Kafka- Part 5 — Failure Recovery Layer- KRaft & The Controller]]
+[[Kafka- Part 6 — Communication Layer- Client Automatic Recovery]]
+[[Kafka - Reliability & Acknowledgements (`acks`)]]
+[[Kafka - Part 8 — Idempotence and Exactly-Once Protection]]
+[[Kafka- Part 9 — Consumer Layer- Consumer Groups & Parallel Processing]]
+[[Kafka - Interview Questions & Architecture Discussions]]
+[[Kafka -Part 12 — Enterprise Layer- Kafka in Solution Architecture]]
 ### Core Concepts
 
-```
-Kafka Cluster
-├── Broker 1  (handles partitions)
-├── Broker 2
-└── Broker 3
-
-Topic: "order-events"
-├── Partition 0  → Leader: Broker 1, Followers: Broker 2, 3
-├── Partition 1  → Leader: Broker 2, Followers: Broker 1, 3
-└── Partition 2  → Leader: Broker 3, Followers: Broker 1, 2
-
-Each Partition: immutable, ordered log of records
-  Offset 0: OrderPlaced {orderId: 1}
-  Offset 1: OrderPlaced {orderId: 2}
-  Offset 2: OrderCancelled {orderId: 1}
-  ...
-```
-
 **Key properties:**
-- Records are **immutable** — never modified or deleted (retention-based cleanup)
-- Consumers track their own **offset** — can replay from any point
+- Records are **immutable** — never modified or deleted <mark style="background: #FFB86CA6;">(retention-based cleanup)</mark>
+- <mark style="background: #ABF7F7A6;">Consumers track their own</mark> **offset** — can replay from any point
 - **Ordering is guaranteed within a partition** — not across partitions
 
 ### Partitioning Strategy
 
 ```
-Producer sends with a key → Kafka hashes key → same key always goes to same partition
-                                                → ordering guaranteed for that key
+Producer sends with a key → Kafka hashes key → same key always goes to same partition → ordering guaranteed for that key
 
 Order events keyed by orderId:
   orderId=123 → always Partition 0 → all events for order 123 are ordered
@@ -49,8 +44,8 @@ Order events keyed by orderId:
 ```
 
 **Partition count rules:**
-- More partitions = more parallelism (consumers)
-- Max consumers in a group = number of partitions
+- <mark style="background: #FFB86CA6;">More partitions = more parallelism (consumers)</mark>
+- <mark style="background: #BBFABBA6;">Max consumers in a group = number of partitions</mark>
 - Choose partition count based on target throughput; you can increase (hard to decrease)
 - Rule of thumb: target_throughput / throughput_per_partition (typically 10MB/s per partition)
 
@@ -75,7 +70,7 @@ Key insight: Each consumer group gets ALL messages independently.
   → Fan-out to multiple services without duplicate logic in producer.
 ```
 
-**Rebalancing:** When a consumer joins/leaves a group, Kafka reassigns partitions. During rebalance, consumption pauses. Use `CooperativeStickyAssignor` (Kafka 2.4+) to minimize rebalance disruption.
+**Rebalancing:** <mark style="background: #FFB86CA6;">When a consumer joins/leaves a group, Kafka reassigns partitions.</mark> During rebalance, consumption pauses. Use `CooperativeStickyAssignor` (Kafka 2.4+) to minimize rebalance disruption.
 
 ### Replication & Durability
 
@@ -108,17 +103,17 @@ Manual commit (correct):
 ### Interview Q&A (40L SA Level)
 
 **Q: How does Kafka guarantee message ordering?**
-A: Ordering is guaranteed within a partition, not across partitions. You guarantee ordering for a specific entity (e.g., all events for Order #123) by using a stable key — the orderId. Kafka hashes the key to determine the partition, so all messages with the same key land on the same partition and are consumed in order. If you need global ordering across all events, use a single partition — but that limits throughput to one consumer.
+A: Ordering is guaranteed within a partition, not across partitions. You guarantee ordering for a specific entity (e.g., all events for Order #123) by using a stable key — the orderId. <mark style="background: #FFB86CA6;">Kafka hashes the key to determine the partition, so all messages with the same key land on the same partition</mark> and are consumed in order. If you need global ordering across all events, use a single partition — but that limits throughput to one consumer.
 
 **Q: How many partitions should a Kafka topic have?**
-A: It depends on your throughput target. A single partition typically handles 10-50MB/s. Divide your target throughput by per-partition throughput to get the minimum. Then factor in consumer parallelism — max consumers in a group equals partition count. More partitions also means more file handles and more replication overhead. I start with a reasonably high count (24 or 48 for high-volume topics) because you can increase but not easily decrease partitions, and rebalance using consumer groups to match actual load.
+A: It depends on your throughput target. <mark style="background: #ADCCFFA6;">A single partition typically handles 10-50MB/s. </mark>Divide your target throughput by per-partition throughput to get the minimum. Then factor in consumer parallelism — <mark style="background: #FFB86CA6;">max consumers in a group equals partition count</mark>. <mark style="background: #FF5582A6;">More partitions also means more file handles and more replication overhead.</mark> I start with a reasonably high count (24 or 48 for high-volume topics) because you can increase but not easily decrease partitions, and rebalance using consumer groups to match actual load.
 
 ---
 
 ## Topic 2 · Producer Patterns — Idempotent & Transactional
 
 ### In One Line
-Kafka producers can lose, duplicate, or reorder messages under failure — idempotent producers eliminate duplicates; transactional producers give exactly-once write across topics and offsets.
+Kafka producers can lose, duplicate, or reorder messages under failure — <mark style="background: #FFB86CA6;">idempotent producers eliminate duplicates;</mark> transactional producers give exactly-once write across topics and offsets.
 
 ### Producer Delivery Semantics
 
@@ -140,7 +135,7 @@ props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
 KafkaProducer<String, String> producer = new KafkaProducer<>(props);
 ```
 
-**How it works:** Each producer gets a PID (Producer ID). Each message gets a sequence number. Broker rejects duplicate sequence numbers from the same PID. Producer retries safely — duplicates are deduplicated at broker level.
+**How it works:** Each producer gets a PID (Producer ID). Each message gets a sequence number. <mark style="background: #FFB8EBA6;">Broker rejects duplicate sequence numbers from the same PID</mark>. Producer retries safely — duplicates are deduplicated at broker level.
 
 ### Transactional Producer — Exactly-Once Across Topics
 
@@ -184,7 +179,7 @@ while (true) {
 ```
 
 **Risk:** If service crashes between processing and committing → message is reprocessed.  
-**Mitigation:** Make your consumer **idempotent** — processing the same message twice produces the same result.
+**Mitigation:** Make your consumer **idempotent** — <mark style="background: #FFB8EBA6;">processing the same message twice produces the same result.</mark>
 
 **Idempotent consumer pattern:**
 ```java

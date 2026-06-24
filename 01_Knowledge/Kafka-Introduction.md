@@ -56,87 +56,58 @@ This is how <mark style="background: #ABF7F7A6;">Kafka organizes files inside th
 
 ## Layer 3 — The Coordination Layer (Replication & Safety)
 This layer defines <mark style="background: #ADCCFFA6;">how the cluster handles data safety and synchronization at the partition level.</mark>
-
-- **The Leader (Active Boss):** Every individual partition piece has one broker assigned as its Leader. For example, Broker 1 is the leader for `order-events-0`. All application reads and writes must talk _only_ to this boss broker.
-    
+- **The Leader (Active Boss):** Every individual partition has one broker assigned as its Leader. For example, Broker 1 is the leader for `order-events-0`. All application reads and writes must talk _only_ to this boss broker.
 - **The Follower (Silent Backup):** The other brokers act as Followers for that partition. Their only job is to constantly copy new offsets from the leader to keep a perfect mirror backup on their own hard drives.
-    
-- **Dual Roles:** A single broker wears both hats at the same time. Broker 1 can be the active Leader for Partition 0, while simultaneously acting as a quiet backup Follower for Partition 1.
-    
+- **Dual Roles:**<mark style="background: #D2B3FFA6;"> A single broker wears both hats at the same time</mark>. Broker 1 can be the active Leader for Partition 0, while simultaneously acting as a quiet backup Follower for Partition 1.
 
 ## Layer 4 — The Communication Layer (The Clients)
-
-These are the external application services that interact with the Kafka cluster.
-
-- **The Producer:** External applications that create and send data _into_ Kafka (Example: Your Java **Order Microservice** sends an event every time a user clicks "Buy").
-    
-- **The Consumer:** External applications that read data _out_ of Kafka at their own pace to process it (Example: Your **Shipping Service** or **Payment Service** microservices).
-    
-- **The Consumer Group:** A team of consumer instances working together. Kafka ensures that if you have 3 partitions and a consumer group with 3 threads, each thread gets pinned to **exactly one partition** to divide and conquer the workload efficiently.
-    
+These are the <mark style="background: #FFB86CA6;">external application services </mark>that interact with the Kafka cluster.
+- **The Producer:** External applications that <mark style="background: #ADCCFFA6;">create and send data _into_ Kafka</mark> (Example: Your Java **Order Microservice** <mark style="background: #FFB8EBA6;">sends an event</mark> every time a user clicks "Buy").
+- **The Consumer:** External applications that<mark style="background: #D2B3FFA6;"> read data _out_ of Kafka at their own pace</mark> to process it (Example: Your **Shipping Service** or **Payment Service** microservices).
+- **The Consumer Group:** A team of consumer instances working together. Kafka ensures that <mark style="background: #ABF7F7A6;">if you have 3 partitions and a consumer group with 3 threads, each thread gets pinned to **exactly one partition**</mark> to divide and conquer the workload efficiently.
 
 ## Layer 5 — The Failure Recovery Layer (Survival Mechanics)
-
 This is the automated internal management engine that keeps Kafka running when disasters strike.
-
-- **The KRaft Controller:** One of the native Kafka brokers in your cluster is elected to have a second job as **The Controller** (The Brain). It constantly pings all other brokers to make sure they are alive.
-    
-- **The Leader Election:** If Broker 1 (the leader of Partition 0) suddenly crashes, the Controller Brain detects it instantly. It looks at the healthy backups (Followers), promotes Broker 2 to be the new active Leader for Partition 0, and updates the cluster map.
-    
-- **Metadata Broadcast:** The Controller updates all live applications automatically about the new leader's IP address, so the Java Producer client redirects traffic seamlessly at runtime without crashing.
-    
+- **The <mark style="background: #FFB86CA6;">KRaft Controller</mark>:** One of the native Kafka brokers in your cluster is elected to have a second job as **The Controller** (The Brain). <mark style="background: #ABF7F7A6;">It constantly pings all other brokers to make sure they are alive.</mark>
+- **The Leader Election:** If Broker 1 (the leader of Partition 0) suddenly crashes, the Controller Brain detects it instantly. It looks at the healthy backups (Followers), promotes Broker 2 to be the new active Leader for Partition 0, and <mark style="background: #ABF7F7A6;">updates the cluster map.</mark>
+- <mark style="background: #D2B3FFA6;">**Metadata Broadcast</mark>:** The Controller updates all live applications automatically about the new leader's IP address, <mark style="background: #FFF3A3A6;">so the Java Producer client redirects traffic seamlessly at runtime without crashing</mark>.
 
 ## Layer 6 — The Ordering Layer (Sequence Architecture)
-
 The strict structural rules that prevent distributed data from processing out of order.
-
-- **Message Keys:** Producers attach a unique ID (like `customerId`) to the message. Kafka runs a math hash on this key to force every single message for that customer to land inside the **exact same partition log file**.
-    
-- **Producer Idempotence:** A configuration (`enable.idempotence=true`) that assigns hidden sequence numbers to message packets on the wire. This ensures that if a network glitch happens, retries do not scramble or flip the original order of the customer's clicks on disk.
-    
+- **Message Keys:** Producers attach a unique ID (like `customerId`) to the message. <mark style="background: #ABF7F7A6;">Kafka runs a math hash on this key to force every single message for that customer to land inside the</mark> **exact same partition log file**.
+- **Producer Idempotence:** A configuration (`enable.idempotence=true`) that assigns hidden sequence numbers to message packets on the wire. <mark style="background: #ABF7F7A6;">This ensures that if a network glitch happens, retries do not scramble or flip the original order</mark> of the customer's clicks on disk.
 - **Single-Thread Consumer:** Restricting processing to **one consumer thread per partition file**. Since a single thread reads a partition file strictly from top to bottom (Offset 0 to 1 to 2), it is physically impossible to process a customer's updates out of order.
-    
 - **Chained Topics:** Sequential pipelines used to order workflows across multiple independent services (Order Topic ➔ Payment Service ➔ Payment Topic ➔ Shipping Service).
-    
 
 ### Layer 7 — The Exception Layer (The Poison Pill Blueprint)
 
 _Added for completeness based on our scale discussion:_ How the ordering layer handles corrupt data without locking up the system.
 
 - **The Head-of-Line Block:** If multiple customers share a partition file and one customer's message throws a database error, it stalls the single consumer thread. Unrelated healthy customers get stuck infinitely behind the bad message.
-    
-- **The Try-Catch Shunt:** The Java consumer catches the processing exception gracefully. Instead of crashing the thread, it publishes the corrupt message to a background **Retry Topic** and commits the main offset.
-    
-- **The Dead Letter Queue (DLQ):** The main partition pipeline is freed instantly for healthy users. Meanwhile, a separate background thread retries the bad message. If it fails repeatedly, it parks it in a **DLQ Topic** for manual engineer review.
-
+- **The Try-Catch Shunt:** The Java consumer catches the processing exception gracefully. Instead of crashing the thread, <mark style="background: #ADCCFFA6;">it publishes the corrupt message to a background **Retry Topic** and commits the main offset.</mark>
+- **The Dead Letter Queue (DLQ):** The main partition pipeline is freed instantly for healthy users. Meanwhile, <mark style="background: #ADCCFFA6;">a separate background thread retries the bad message</mark>. If it fails repeatedly,<mark style="background: #D2B3FFA6;"> it parks it in a **DLQ Topic** for manual engineer review.</mark>
 
 ## 4. One Complete End-to-End Journey
-
 Here is the exact timeline of a single message moving through the entire infrastructure layout you have learned so far:
-
-Plaintext
 
 ```
 [Customer clicks Buy]
          │
          ▼
- 1. PRODUCER LAYER       ➔ Order Service creates event message: {"id": 99, "total": 50}
+ 1. PRODUCER LAYER➔ Order Service creates event message: {"id": 99, "total": 50}
          │
          ▼
- 2. DATA LAYER           ➔ Hashing math runs on Message Key. It selects Partition 0.
+ 2. DATA LAYER➔ Hashing math runs on Message Key. It selects Partition 0.
          │
          ▼
- 3. STORAGE LAYER        ➔ Message lands on Broker 1 (The elected Partition 0 Leader).
-         │                 It is appended to the bottom of the log file at Offset 45.
+ 3. STORAGE LAYER➔ Message lands on Broker 1 (The elected Partition 0 Leader).
+         │     It is appended to the bottom of the log file at Offset 45.
          │
          ▼
- 4. REPLICATION LAYER    ➔ Broker 2 and Broker 3 (Followers) copy Offset 45 to their disks.
+ 4. REPLICATION LAYER➔ Broker 2 and Broker 3 (Followers) copy Offset 45 to                                their disks.
          │
          ▼
- 5. CONSUMER LAYER       ➔ The Payment Service (Consumer Thread) polls Partition 0,
-                           reads Offset 45, charges the card, and updates the cluster.
+ 5. CONSUMER LAYER➔ The Payment Service (Consumer Thread) polls Partition 0,
+                     reads Offset 45, charges the card, and updates the cluster.
 ```
 
-This introduction lays the perfect foundation for your interview notebook.
-
-We can jump right back into the deep technical layers next—what is the next specific area or interview question you want to outline?
