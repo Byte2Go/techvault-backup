@@ -38,34 +38,34 @@ START: What is your primary access pattern?
 │     → Redshift / BigQuery / Snowflake (Data Warehouse)
 │
 └── Semantic / vector similarity search (AI)?
-      → pgvector / Pinecone / Weaviate (Vector DB)
+      → pgvector / Pinecone  (Vector DB)
 ```
 
 ### Quick Selection Table
 
-| Use Case | DB Choice | Why |
-|---|---|---|
-| Order management | PostgreSQL | ACID, relational, complex queries |
-| User profiles | MongoDB | Flexible schema, nested addresses/preferences |
-| Session / cache | Redis | Sub-ms reads, TTL support |
-| Product catalog + search | Elasticsearch | Full-text search, faceted filters |
-| IoT sensor data | InfluxDB or TimescaleDB | Time-series compression, range queries |
-| Chat messages | Cassandra | High write throughput, time-ordered access |
-| Shopping cart | Redis or DynamoDB | Fast reads, per-user key, TTL |
-| Recommendation engine | pgvector or Pinecone | Similarity search on embeddings |
-| Financial ledger | PostgreSQL | ACID, auditability, constraints |
-| Analytics / reporting | Redshift or BigQuery | Column-store, scan billions of rows |
+| Use Case                 | DB Choice                | Why                                            |
+| ------------------------ | ------------------------ | ---------------------------------------------- |
+| Order management         | PostgreSQL               | ACID, relational, complex queries              |
+| User profiles            | MongoDB                  | Flexible schema, nested addresses/preferences  |
+| Session / cache          | Redis                    | Sub-ms reads, TTL support                      |
+| Product catalog + search | Elasticsearch            | Full-text search, faceted filters              |
+| IoT sensor data          | InfluxDB or TimescaleDB  | Time-series compression, range queries         |
+| Chat messages            | Cassandra                | ==High write throughput==, time-ordered access |
+| Shopping cart            | Redis or DynamoDB        | ==Fast reads==, per-user key, TTL              |
+| Recommendation engine    | ==pgvector== or Pinecone | ==Similarity search== on embeddings            |
+| Financial ledger         | PostgreSQL               | ACID, auditability, constraints                |
+| Analytics / reporting    | ==Redshift== or BigQuery | Column-store, ==scan billions of rows==        |
 
 ### SQL vs NoSQL — Core Tradeoffs
 
-| Dimension | SQL (PostgreSQL) | NoSQL (MongoDB/Cassandra) |
-|---|---|---|
-| Schema | Rigid (migrations needed) | Flexible (schema-less / schema-optional) |
-| Transactions | ACID | BASE (eventual consistency default) |
-| Joins | Native, efficient | No joins — denormalize or application-side |
-| Scaling | Vertical + read replicas | Horizontal sharding built-in |
-| Query flexibility | Ad-hoc SQL, any column | Limited to designed access patterns |
-| Best for | Complex relationships, transactions | Scale, flexibility, known access patterns |
+| Dimension         | SQL (PostgreSQL)                    | NoSQL (MongoDB/Cassandra)                  |
+| ----------------- | ----------------------------------- | ------------------------------------------ |
+| Schema            | Rigid (migrations needed)           | Flexible (schema-less / schema-optional)   |
+| Transactions      | ACID                                | BASE (eventual consistency default)        |
+| Joins             | Native, efficient                   | No joins — denormalize or application-side |
+| Scaling           | ==Vertical + read replicas==        | ==Horizontal sharding built-in==           |
+| Query flexibility | Ad-hoc SQL, any column              | Limited to designed access patterns        |
+| Best for          | Complex relationships, transactions | Scale, flexibility, known access patterns  |
 
 > **SA rule:** If you're unsure, start with PostgreSQL. You can always migrate out. Migrating from NoSQL to relational when you realize you need transactions is painful.
 
@@ -74,9 +74,9 @@ START: What is your primary access pattern?
 ## Topic 2 · PostgreSQL Deep Dive — Indexing, Partitioning, JSONB
 
 ### In One Line
-PostgreSQL is the Swiss Army knife of databases — but only if you know how to wield indexes, partitions, and JSONB to make it perform at scale.
+PostgreSQL is the Swiss Army knife of databases — but only if you know how to wield ==indexes, partitions, and JSONB== to make it perform at scale.
 
-### Indexing Strategies
+### Indexing Strategies [[DB Concept - Indexing]]
 
 **B-Tree (default — most common):**
 ```sql
@@ -125,7 +125,7 @@ ORDER BY created_at DESC LIMIT 20;
 -- Actual rows >> Estimated rows → stale statistics (run ANALYZE)
 ```
 
-### Table Partitioning
+### Table Partitioning [[DB Concept- Table Partitioning (Horizontal Scale-Out)]]
 
 **Range partitioning (by date — most common for time-series data):**
 ```sql
@@ -151,7 +151,7 @@ CREATE TABLE orders_2026 PARTITION OF orders
 - Maintenance: drop old partitions instantly vs expensive DELETE
 - Archival: move old partitions to cheaper tablespace
 
-### JSONB — Semi-Structured Data in PostgreSQL
+### JSONB — Semi-Structured Data in PostgreSQL [[DB Concept- JSONB (Semi-Structured Data Design)]]
 
 ```sql
 -- Storing flexible metadata without separate tables
@@ -174,26 +174,28 @@ SELECT metadata->>'source' as source, COUNT(*)
 FROM orders GROUP BY metadata->>'source';
 ```
 
-**When to use JSONB over a separate table:**
+**When to use JSONB over a standard sql column:**
 - Data is optional / sparse (not all orders have metadata)
-- Schema varies per record (different fields per order source)
+- <mark style="background: #D2B3FFA6;">Schema varies per record</mark> (different fields per order source)
 - No need to query by those fields in most cases
 
 ### Interview Q&A
-
 **Q: How do you handle a 1-billion row orders table in PostgreSQL?**
-A: Partition by date range — most queries are time-bounded (last 30 days), so partition pruning eliminates 99% of the table. Index the partition key and common filter columns. Add read replicas for reporting queries. Archive partitions older than the retention window to cold storage (S3 via pg_partman or custom). For write scaling beyond a single primary, consider Citus for horizontal sharding — but try partitioning first.
+A: Partition by date range — most queries are time-bounded (last 30 days), <mark style="background: #ADCCFFA6;">so partition pruning eliminates 99% of the table.</mark> <mark style="background: #FFB86CA6;">Index the</mark> <mark style="background: #D2B3FFA6;">partition key and common filter columns</mark>. <mark style="background: #BBFABBA6;">Add read replicas for reporting queries</mark>. <mark style="background: #FFF3A3A6;">Archive partitions older than the retention window to cold storage (S3 via pg_partman or custom).</mark> <mark style="background: #FFB8EBA6;">For write scaling beyond a single primary, consider for horizontal sharding — but try partitioning first.</mark>
+
+**Sharding  Strategy: Built-in vs. Plug-in**
+- **PostgreSQL:** Believes in a lightweight core database. If you want distributed sharding, you must install an external software tool or extension like **Citus**.
+- **Oracle:** Believes in an all-inclusive database engine. If your database scales to a point where a single machine chokes on writes, you simply toggle on **Oracle Sharding** using native configurations.
 
 **Q: When would you use JSONB instead of adding a new column?**
-A: When data is sparse (only some rows have it), schema varies per record, or the field is a bag of optional attributes that don't need to be queried independently at high frequency. Don't use JSONB to avoid schema design — if you query a field in WHERE clauses or JOIN on it regularly, make it a proper column with an index. JSONB is a tool for flexibility, not a shortcut for schema laziness.
+A: When <mark style="background: #FFF3A3A6;">data is sparse (only some rows have it), schema varies per record</mark>, or the field is a bag of optional attributes that don't need to be queried independently at high frequency. Don't use JSONB to avoid schema design — if you query a field in WHERE clauses or JOIN on it regularly, make it a proper column with an index. JSONB is a tool for flexibility, not a shortcut for schema laziness.
 
 ---
-
 ## Topic 3 · NoSQL Databases — Use Case Mastery
 
 ### MongoDB — Document Database
 
-**Best for:** Flexible schema, hierarchical data, content management, user profiles
+**Best for:** Flexible schema, hierarchical data, <mark style="background: #FFB8EBA6;">content management, user profiles</mark>
 
 ```javascript
 // Document structure — no joins needed
@@ -236,7 +238,7 @@ try {
 
 ### DynamoDB — AWS Key-Value / Wide Column
 
-**Best for:** Known access patterns, high throughput, serverless, global tables
+**Best for:** Known access patterns, <mark style="background: #FFB86CA6;">high throughput, serverless, global tables</mark>
 
 **Core concept — single-table design:**
 ```
@@ -270,7 +272,7 @@ PLACED      | 2026-01-01T11:00:00
 
 ### Cassandra — Wide Column for High Write Throughput
 
-**Best for:** Time-series, messaging, IoT, write-heavy workloads at massive scale
+**Best for:** Time-series, messaging, IoT, <mark style="background: #FFB86CA6;">write-heavy workloads at massive scale</mark>
 
 ```sql
 -- Cassandra table design — query-first approach
@@ -288,17 +290,17 @@ CREATE TABLE messages_by_conversation (
 ```
 
 **Key Cassandra principles:**
-- Design table per query — no flexible querying
-- Partition key determines which node stores data — choose for even distribution
+- <mark style="background: #FFB86CA6;">Design table per query</mark> — no flexible querying
+- <mark style="background: #ADCCFFA6;">Partition key</mark> determines which node stores data — choose for even distribution
 - No joins, no transactions across partitions
-- Eventual consistency by default (tunable with QUORUM reads)
+- <mark style="background: #D2B3FFA6;">Eventual consistency by default </mark>(tunable with QUORUM reads)
 
 ---
 
 ## Topic 4 · Redis — Caching Patterns
 
 ### In One Line
-Redis is an in-memory data structure store — used for caching, session management, distributed locks, rate limiting, and pub/sub — and every SA must know the right pattern for each.
+Redis is an in-memory data structure store — used for<mark style="background: #ADCCFFA6;"> caching, session management, distributed locks, rate limiting, and pub/sub</mark> — and every SA must know the right pattern for each.
 
 ### Cache-Aside (Lazy Loading) — Most Common
 
@@ -325,7 +327,7 @@ public void updateProduct(Product product) {
 }
 ```
 
-**Properties:** Cache only populated on demand. Cold start = all cache misses. DB is source of truth.
+**Properties:** <mark style="background: #D2B3FFA6;">Cache only populated on demand</mark>. Cold start = all cache misses. DB is source of truth.
 
 ### Write-Through — Cache Updated on Every Write
 
@@ -337,7 +339,7 @@ public void updateProduct(Product product) {
 }
 ```
 
-**Properties:** Cache always up-to-date. More writes to Redis. Good for read-heavy data that changes frequently.
+**Properties:** <mark style="background: #ADCCFFA6;">Cache always up-to-date. More writes to Redis.</mark> Good for read-heavy data that changes frequently.
 
 ### Write-Behind (Write-Back) — Async DB Write
 
@@ -359,7 +361,7 @@ Application → Cache (Redis)
                (Application never directly queries DB)
 ```
 
-Used by managed caching solutions (AWS ElastiCache + DAX for DynamoDB).
+<mark style="background: #FFB86CA6;">Used by managed caching solutions</mark> (AWS ElastiCache + DAX for DynamoDB).
 
 ### Cache Eviction Policies
 

@@ -1,0 +1,6 @@
+## 1- Database Archival caused slowness in query
+Running an operation like `DELETE FROM orders WHERE created_at < '2025-01-01'` on a <mark style="background: #FFB8EBA6;">massive dataset locks the database table, generates massive transaction log overhead</mark>, and <mark style="background: #FF5582A6;">leaves behind fragmented empty spaces (bloat) that slow down future scans.</mark>
+
+<mark style="background: #ADCCFFA6;">When data becomes too old and needs to be purged to save costs</mark>, architects do not use expensive `DELETE` statements. Instead, <mark style="background: #D2B3FFA6;">they drop the entire historical physical table partition using a single metadata operation</mark> (`DROP TABLE orders_2025;`).
+- **The Scale Benefit:** This operation executes in milliseconds, frees up disk space instantly, creates zero database table bloat, and bypasses heavy transactional log writes.
+Relational engines allow you to assign <mark style="background: #FFB86CA6;">different physical hardware storage to different partitions</mark>. You can mount your active partition (`orders_2026`) on ultra-fast, expensive NVMe SSD drives, while moving historical partitions (`orders_2025`) to cheaper, slower cloud storage blocks, minimizing cold data infrastructure costs.

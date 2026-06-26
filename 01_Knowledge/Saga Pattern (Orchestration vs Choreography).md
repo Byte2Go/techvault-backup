@@ -28,7 +28,7 @@ In a Choreography model, there is no central boss. <mark style="background: #ABF
 
 ##### If it fails:
 If `Inventory Service` fails, it publishes an `InventoryFailed` event. `Payment Service` hears that failure event and runs its compensating transaction (refunds the money).
-- **The Architect's Verdict:** Excellent for simple workflows with 3 to 4 services. It provides ultra-high performance and low coupling. However, if your topology scales past 10 services, Choreography becomes an unmanageable web of "spaghetti events"—it becomes impossible to track the global state of a transaction.
+- **The Architect's Verdict:** Excellent for simple workflows with 3 to 4 services. <mark style="background: #ABF7F7A6;">It provides ultra-high performance and low coupling.</mark> However, if your topology scales past 10 services, Choreography becomes an unmanageable web of "spaghetti events"—it becomes impossible to track the global state of a transaction.
 
 #### Style B: Orchestration (Centralized / Command-Driven)
 In an Orchestration model, you introduce a dedicated architectural component called the **Saga Orchestrator** (the Conductor). The orchestrator acts as a central brain that explicitly tells each microservice what to do via direct synchronous commands or targeted messages.
@@ -40,7 +40,7 @@ In an Orchestration model, you introduce a dedicated architectural component cal
 
 ##### If it fails:
 If `Inventory Service` replies with a failure, the Orchestrator reads its internal workflow script and explicitly sends an undo command down to `Payment Service`: _"Execute Refund."_
-- **The Architect's Verdict:** Highly recommended for complex enterprise architectures with 5+ microservices. It centralizes your business workflow logic in one place, making troubleshooting and auditing simple. The trade-off is that the orchestrator becomes a critical component that you must scale and monitor carefully.
+- **The Architect's Verdict:** <mark style="background: #FFB86CA6;">Highly recommended for complex enterprise architectures with 5+ microservices</mark>. It centralizes your business workflow logic in one place, making troubleshooting and auditing simple. The trade-off is that the orchestrator becomes a critical component that you must scale and monitor carefully.
 
 
 ### 3. Choreography vs. Orchestration Selection Matrix

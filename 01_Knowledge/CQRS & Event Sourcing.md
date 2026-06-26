@@ -60,9 +60,7 @@ To figure out what is currently inside Cart 99, <mark style="background: #ADCCFF
 > **The Optimization (Snapshots):** If an entity (like a long-lived bank account) has 10,000 historical events, replaying them on every single request destroys performance. <mark style="background: #D2B3FFA6;">To solve this, the Event Store saves a **Snapshot** every 100 events (e.g., _"State at Event 1000 was Balance: $500"_).</mark> <mark style="background: #FFB86CA6;">The application loads the snapshot and only replays the events that happened _after_ that snapshot.</mark>
 
 ### 3. Combining CQRS & Event Sourcing
-
 As displayed in the architecture framework diagram below, when you combine both concepts, you build an incredibly responsive system:
-
 1. **Command Execution:** A user submits a transaction via the Command Endpoint. The Command Service validates it against business logic and appends an Event directly to the <mark style="background: #FFB86CA6;">**Event Store** (The Write Database)</mark>.
 2. **Asynchronous Projection:** <mark style="background: #ADCCFFA6;">An **Event Publisher** monitors the Event Store and streams the new event out to a **Messaging System** (like Kafka).</mark>
 3. **Read Model Hydration:** <mark style="background: #ADCCFFA6;">An **Event Consumer** reads the message</mark> and updates a highly optimized, denormalized **Read Storage** database (like Elasticsearch or a flat PostgreSQL View table).
@@ -72,7 +70,7 @@ As displayed in the architecture framework diagram below, when you combine both 
 
 #### The Superpowers (Why top companies use it):
 - **Time Travel & Flawless Auditing:** Because you store every event, you have a perfect audit trail for compliance (mandatory for fintech, healthcare, and logistics). You can easily answer: _"What did this user's dashboard look like exactly on Tuesday at 3:14 PM?"_ by replaying events up to that exact timestamp.
-- **Massive Performance Optimization:** Your read database can be designed completely differently from your write database. For example, writes can go into a high-speed write-heavy log engine, while reads are fetched directly from a super-fast Elasticsearch index.
+- **Massive Performance Optimization:** <mark style="background: #FFB86CA6;">Your read database can be designed completely differently from your write database</mark>. For example, writes can go into a high-speed write-heavy log engine, while reads are fetched directly from a super-fast Elasticsearch index.
 
 #### The Hidden Production Pitfalls (The Reality Check):
 - **Eventual Consistency:** The <mark style="background: #FFB8EBA6;">Read Storage is updated asynchronously _after_ the Event Store commits. </mark>This means there is a split-second window where a user clicks "Submit", the page reloads, and their new data isn't visible on the query side yet. Your frontend must be built to handle this gracefully (e.g., using optimistic UI patterns).
@@ -152,7 +150,7 @@ When a user executes back-to-back actions, the Query Service (Read Side) interce
                         │
          ┌──────────────┴──────────────┐
          ▼ FOUND                       ▼ NOT FOUND (Max Catastrophe)
-   Serve Redis Balance (₹4500)    1. Read Raw Ledger from Write DB (Highly Guarded)
+   Serve Redis Balance(₹4500)    1. Read Raw Ledger from Write DB (Highly Guarded)
    to user immediately.           OR
    (Guarantees true balance       2. Display Stale Balance + UI Banner:
     while Kafka is broken)           "System busy. Balance updating."
@@ -167,7 +165,7 @@ If Kafka crashes or experiences a 5-minute partition lag, the polling loop hits 
 - **The Redis Bypass:** The Query Service automatically falls back to check the **Redis Cache**. Because the write side seeded Redis directly at the moment of completion, the true, updated balance (`₹4,500`) is sitting right there. The Query Service pulls the balance from Redis and serves it to the user. The client app functions seamlessly, totally oblivious to the fact that Kafka is burning in the background.
 #### Scenario C: Total Disaster Path (Kafka Broken 5+ Mins AND Redis Cache Expired)
 In the ultra-rare event that Kafka is broken for so long that the 60-second Redis TTL expires, the system drops into its final defensive layer:
-1. **Regulated Write-DB Read:** If security policies mandate absolute real-time accuracy, a strictly rate-limited fallback query is fired directly against the core **Write DB Ledger** to sum up the last few blocks and calculate the balance.
+1. **Regulated Write-DB Read:** If security policies mandate absolute real-time accuracy, a strictly rate-limited fallback <mark style="background: #FFB86CA6;">query is fired directly against the core **Write DB Ledger** to sum up the last few blocks and calculate the balance.</mark>
 2. **Graceful UI Degradation:** If touching the Write DB is disabled due to performance risk, the Query Service serves the stale data from the Read DB, appends a tracking header (`X-Data-State: Stale`), and the frontend UI safely mounts a processing notice: _“⚠️ Systems are currently busy. Recent transactions may take a few minutes to reflect in your available balance.”_
 
 ### 4. Trade-offs

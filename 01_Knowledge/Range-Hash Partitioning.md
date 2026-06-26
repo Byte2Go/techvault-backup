@@ -105,15 +105,13 @@ SUBPARTITION BY HASH (customer_id) SUBPARTITIONS 3
 When you connect your Spring Boot application to a database, your `application.properties` points to a single URL: `jdbc:oracle:thin:@//production-db-server:1521/enterprise_db` or `jdbc:postgresql://localhost:5432/orders_db`.
 
 That is **1 Database Instance**.
-
 - Inside that one instance, you have one `orders` table.
 - To your Spring Boot Java application, it looks like a single table. You run `SELECT * FROM orders`, and you don't care how it's stored.
 
-<mark style="background: #FFB86CA6;">Partitioning is a trick played by the database engine at the **Storage Layer (Disk Level)** inside that single instance.</mark> Instead of creating one giant 10-Terabyte data file on disk for the `orders` table, the database management system (DBMS) automatically carves that table up into **9 independent physical storage files** (often called tablespaces or data segments).
+<mark style="background: #FFB86CA6;">Partitioning is a trick played by the database engine at the **Storage Layer (Disk Level)** inside that single instance.</mark> Instead of creating one giant 10-Terabyte data file on disk for the `orders` table, the database management system (DBMS) automatically carves that table up into **9 independent physical storage files** (<mark style="background: #ADCCFFA6;">often called tablespaces</mark> or data segments).
 
 ### 2. Visualizing Disk Files
 Think of your single database instance as **one large filing cabinet**. Inside this single cabinet, partitioning creates organized drawers and folders:
-
 
 ```
                ┌────────────────────────────────────────────────────────┐

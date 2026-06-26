@@ -25,11 +25,10 @@
 ---
 
 ## Step 1: Clarify First (0–5 min)
-
 Always ask these before drawing anything:
 
 **Functional:**
-- "Is payment processed in-house or via a gateway like Razorpay/Stripe?"
+- "Is payment processed in-house or via a gateway like Razorpay/Stripe/GlobalPayment?"
 - "Do we need real-time order tracking or is eventual notification acceptable?"
 - "Is the product catalog read-heavy? Any seller-side write flows?"
 - "Do mobile and web need different data? (Determines BFF need)"
@@ -78,14 +77,14 @@ Data volume:
 
 ### NFR Table
 
-| NFR | Target | Architecture Implication |
-|---|---|---|
-| Availability | 99.9% | Multi-AZ deployment; no single point of failure |
-| Order placement latency | p99 < 500ms | Async Kafka for notifications; sync only for critical path |
-| Catalog read latency | p99 < 100ms | Redis caching; CloudFront CDN for images |
-| RTO | 4 hours | Active-passive DR; automated failover |
-| RPO | 1 hour | RDS Multi-AZ + automated backups |
-| Security | OAuth2 + JWT | Keycloak auth server; API Gateway validation |
+| NFR                     | Target       | Architecture Implication                                                |
+| ----------------------- | ------------ | ----------------------------------------------------------------------- |
+| Availability            | 99.9%        | ==Multi-AZ deployment==; no single point of failure                     |
+| Order placement latency | p99 < 500ms  | Async Kafka for notifications; sync only for critical path              |
+| Catalog read latency    | p99 < 100ms  | Redis caching; ==CloudFront CDN for images==                            |
+| RTO                     | 4 hours      | Active-passive DR; ==automated failover==                               |
+| RPO                     | 1 hour       | RDS Multi-AZ + automated backups                                        |
+| Security                | OAuth2 + JWT | ==Keycloak/ForgeRock/PingIdentity auth server==; API Gateway validation |
 
 ---
 
@@ -93,7 +92,7 @@ Data volume:
 
 ### Identify Bounded Contexts (DDD approach — say this out loud)
 
-> "I start with business capabilities, then validate against DDD bounded contexts. The key test: can each service be owned by one team and deployed independently?"
+> "I start with ==business capabilities, then validate against DDD bounded contexts==. The key test: <mark style="background: #FFB8EBA6;">can each service be owned by one team and deployed independently</mark>?"
 
 ```
 Squad 1 — Catalog & Discovery:
@@ -125,22 +124,23 @@ Squad 4 — Fulfillment & Comms:
                             INTERNET
                                │
                     ┌──────────┴──────────┐
-                    │   CloudFront (CDN)   │  ← Static assets, cacheable API responses
-                    └──────────┬──────────┘
+                    │   CloudFront (CDN)  │ ← Static assets,cacheable API 
+                    └──────────┬──────────┘    responses
                                │
                     ┌──────────┴──────────┐
-                    │   AWS WAF + Shield   │  ← DDoS, OWASP Top 10 rules
+                    │   AWS WAF + Shield  │  ← DDoS, OWASP Top 10 rules
                     └──────────┬──────────┘
                                │
                ┌───────────────┴───────────────┐
-               │         API Gateway (Kong)     │  ← Auth (JWT validation), Rate limiting,
-               │                               │    Routing, SSL termination, Logging
-               └──────┬──────────────┬─────────┘
+               │         API Gateway           │  ← Auth (JWT validation), Rate 
+			   │		(BroadCom/AWS)	       │    limiting,
+               │                               │   Routing, SSL termination, 
+               └──────┬──────────────┬─────────┘    Logging
                       │              │
              ┌────────┴───┐    ┌─────┴──────┐
              │  Web BFF   │    │ Mobile BFF │   ← Separate BFF per client type
              │ (Node.js)  │    │  (Node.js) │     Web BFF: rich data, pagination
-             └────────┬───┘    └─────┬──────┘     Mobile BFF: lightweight, push-notif
+             └────────┬───┘    └─────┬──────┘ Mobile BFF: lightweight, push-notif
                       │              │
                       └──────┬───────┘
                              │ (internal REST / gRPC)
@@ -153,8 +153,8 @@ Squad 4 — Fulfillment & Comms:
   └────┬───┘ └────┬───┘ └───┬────┘ └───┬──┘ └────┬──────┘
        │          │         │          │          │
   ┌────┴──┐  ┌────┴──┐ ┌────┴──┐  ┌────┴──┐ ┌────┴──┐
-  │Elastic│  │Postgres│ │Postgres│  │Postgres│ │Postgres│
-  │Search │  │ (User)│ │(Order)│  │(Invent)│ │(Paymnt)│
+  │Elastic│  │Postgres││Postgres│ │Postgres││Postgres│
+  │Search │  │ (User)│ │(Order)│  │(Invent)││(Paymnt)│
   │+Redis │  └───────┘ └───┬───┘  └───────┘ └───────┘
   └───────┘                │
                            │ Publishes domain events
@@ -178,7 +178,7 @@ Squad 4 — Fulfillment & Comms:
                               ┌───────────┼───────────┐
                               │           │           │
                            Email        SMS         Push
-                         (SES)      (Twilio)    (FCM/APNS)
+                          (SES)      (Twilio)    (FCM/APNS)
 ```
 
 ### Infrastructure Layer
@@ -285,7 +285,7 @@ within OrderService without a dedicated saga orchestrator.
 > These show maturity — interviewers love when you flag what's not solved.
 
 **What I'd validate before committing:**
-- "The MSK vs self-hosted Kafka decision needs a cost analysis — MSK is 3-4x more expensive than self-hosted on EKS, but operational burden for Kafka is high. For 50K orders/day, MSK is worth it."
+- "The MSK vs self-hosted Kafka decision needs a cost analysis —<mark style="background: #FFB86CA6;"> MSK is 3-4x more expensive than self-hosted on EKS,</mark> but operational burden for Kafka is high. For 50K orders/day, MSK is worth it."
 - "I'd do a load test before launch — 500 orders/min is modest, but inventory reservation under peak concurrency needs validation."
 
 **What I'd add at scale:**
@@ -298,66 +298,37 @@ within OrderService without a dedicated saga orchestrator.
 ## Interviewer Follow-Up Questions (Prepare These)
 
 **Q: "Your OrderService calls InventoryService synchronously. What happens if Inventory is slow?"**
-A: Timeout + circuit breaker (Resilience4j). Order Service configures: 200ms timeout for Inventory call. If Inventory exceeds 200ms → timeout exception → circuit breaker opens after 5 consecutive failures → subsequent calls fail fast (don't wait 200ms each). Fall back to: reject the order with "service temporarily unavailable" rather than hanging. Inventory team gets alerted via Kafka consumer lag metrics. I'd also push to make inventory check async in v2 — accept order optimistically, compensate if stock isn't available.
+A: <mark style="background: #FFB86CA6;">Timeout + circuit breaker (Resilience4j).</mark> Order Service configures: 200ms timeout for Inventory call. If Inventory exceeds 200ms → timeout exception → circuit breaker opens after 5 consecutive failures → subsequent calls fail fast (don't wait 200ms each). Fall back to: reject the order with "service temporarily unavailable" rather than hanging. Inventory team gets alerted via Kafka consumer lag metrics. I'd also push to make inventory check async in v2 — accept order optimistically, compensate if stock isn't available.
 
 **Q: "How do you handle duplicate order submissions — user clicks twice on mobile?"**
-A: Idempotency key. Mobile app generates a UUID per order attempt and sends it as a header (`Idempotency-Key: uuid-abc`). Order Service checks Redis: has this key been processed? If yes, return the cached response (same orderId, no new order created). If no, process and cache the result with a 24-hour TTL. This makes double-click, network retry, and app restart safe.
+A: <mark style="background: #FFB86CA6;">Idempotency key. </mark>Mobile app generates a UUID per order attempt and sends it as a header (`Idempotency-Key: uuid-abc`). Order Service checks Redis: has this key been processed? If yes, return the cached response (same orderId, no new order created). If no, process and cache the result with a 24-hour TTL. This makes double-click, network retry, and app restart safe.
 
 **Q: "50K orders is current. How does your design scale to 5M orders/day?"**
-A: Horizontal scaling is built in — Kubernetes HPA scales OrderService pods on CPU/Kafka consumer lag. The DB becomes the bottleneck first: I'd add read replicas for reporting queries, partition the orders table by date, and consider sharding by customerId at ~500K orders/day. Kafka partitions would increase (currently adequate at 50K; at 5M I'd revisit partition count and consumer group sizing). The BFF layer is stateless — scales linearly. The main architectural change at 5M: separate the read model (CQRS) — heavy order history queries move to an Elasticsearch projection rather than hitting the primary DB.
+A: <mark style="background: #FFB86CA6;">Horizontal scaling is built in — Kubernetes HPA scales</mark> OrderService pods <mark style="background: #FFB8EBA6;">on CPU/Kafka consumer lag</mark>. The DB becomes the bottleneck first: I'd add read replicas for reporting queries, partition the orders table by date, and consider sharding by customerId at ~500K orders/day. Kafka partitions would increase (currently adequate at 50K; at 5M I'd revisit partition count and consumer group sizing). The BFF layer is stateless — scales linearly. The main architectural change at 5M: separate the read model (CQRS) — heavy order history queries move to an Elasticsearch projection rather than hitting the primary DB.
 
 **Q: "How do you deploy a new version of OrderService with zero downtime?"**
-A: Rolling update in Kubernetes — `maxUnavailable: 0`, `maxSurge: 1`. New pod starts, readiness probe passes (/actuator/health/readiness), then old pod terminates. Combine with a `preStop` hook (sleep 5s) to drain in-flight requests before shutdown. For riskier releases, canary deployment via Argo Rollouts — 10% traffic to new version, monitor error rate and p99 latency for 10 minutes, then 100%. Automated rollback triggers if error rate exceeds 0.1%.
+A: <mark style="background: #FFB86CA6;">Rolling update in Kubernetes</mark> — `maxUnavailable: 0`, `maxSurge: 1`. <mark style="background: #ADCCFFA6;">New pod starts, readiness probe passes (/actuator/health/readiness), then old pod terminates.</mark> Combine with a `preStop` hook (sleep 5s) to drain in-flight requests before shutdown. For riskier releases, <mark style="background: #D2B3FFA6;">canary deployment via Argo Rollouts </mark>— 10% traffic to new version, monitor error rate and p99 latency for 10 minutes, then 100%. Automated rollback triggers if error rate exceeds 0.1%.
 
 **Q: "Walk me through your monitoring strategy."**
-A: Three pillars. Metrics: Prometheus scraping all services (JVM heap, GC, request rate, error rate, Kafka consumer lag), Grafana dashboards per service, PagerDuty alert if Order placement error rate > 0.1% or consumer lag > 10K. Logs: structured JSON logging with correlation IDs, shipped to CloudWatch Logs, indexed in OpenSearch for searching. Traces: OpenTelemetry SDK in every service, traces sent to Jaeger — I can trace a single order request across all 5 services it touches. SLO: 99.9% of order placement requests complete in under 500ms, measured via Prometheus.
+A: Three pillars. **Metrics**: Prometheus scraping all services (JVM heap, GC, request rate, error rate, Kafka consumer lag), Grafana dashboards per service, PagerDuty alert if Order placement error rate > 0.1% or consumer lag > 10K. Logs: structured JSON logging with correlation IDs, shipped to CloudWatch Logs, indexed in OpenSearch for searching. Traces: OpenTelemetry SDK in every service, traces sent to Jaeger — I can trace a single order request across all 5 services it touches. SLO: 99.9% of order placement requests complete in under 500ms, measured via Prometheus.
 
 ---
 
 ## Scoring Rubric — Self-Assessment After Practice
 
-Score yourself 1-5 on each dimension:
+| Dimension                 | What Good Looks Like                                          |
+| ------------------------- | ------------------------------------------------------------- |
+| **Requirements**          | Asked 3-5 clarifying questions; stated assumptions explicitly |
+| **Scale math**            | Did back-of-envelope for TPS, storage, bandwidth              |
+| **Service decomposition** | Justified boundaries with DDD/Conway's Law                    |
+| **Architecture diagram**  | Drew complete diagram with all components                     |
+| **Critical path**         | Explained sync vs async split and why                         |
+| **Data layer**            | Different DB per service, justified each                      |
+| **Resilience**            | Mentioned circuit breaker, DLQ, idempotency                   |
+| **Deployment**            | Mentioned CI/CD, zero-downtime, rollback                      |
+| **Tradeoffs**             | Proactively called out what you'd do differently              |
+| **Follow-ups**            | Answered deep-dives without hesitation                        |
 
-| Dimension | What Good Looks Like | Your Score |
-|---|---|---|
-| **Requirements** | Asked 3-5 clarifying questions; stated assumptions explicitly | /5 |
-| **Scale math** | Did back-of-envelope for TPS, storage, bandwidth | /5 |
-| **Service decomposition** | Justified boundaries with DDD/Conway's Law | /5 |
-| **Architecture diagram** | Drew complete diagram with all components | /5 |
-| **Critical path** | Explained sync vs async split and why | /5 |
-| **Data layer** | Different DB per service, justified each | /5 |
-| **Resilience** | Mentioned circuit breaker, DLQ, idempotency | /5 |
-| **Deployment** | Mentioned CI/CD, zero-downtime, rollback | /5 |
-| **Tradeoffs** | Proactively called out what you'd do differently | /5 |
-| **Follow-ups** | Answered deep-dives without hesitation | /5 |
-
-**Target score:** 40+/50 before walking into interviews.
-
----
-
-## What Impresses at 40L Level
-
-✅ Open with clarifying questions — never assume  
-✅ State assumptions explicitly ("I'll assume Razorpay for payments")  
-✅ Do back-of-envelope math out loud  
-✅ Name patterns by name: "BFF pattern", "Strangler Fig", "Circuit Breaker", "Saga"  
-✅ Justify every major decision with a tradeoff  
-✅ Proactively mention what you haven't solved  
-✅ Reference Conway's Law when explaining service boundaries  
-✅ Distinguish sync (critical path) from async (Kafka) and explain why  
-✅ Mention idempotency for order placement without being asked  
-✅ Bring up compliance (PCI tokenization, data residency) if it's a fintech context  
-
-## What Kills Candidates at This Level
-
-❌ Jump to drawing boxes without clarifying  
-❌ Single monolith DB for all services  
-❌ No mention of caching (every read-heavy system needs it)  
-❌ Kafka for everything including 2-entity sync calls  
-❌ No mention of failure handling — what if PaymentService is down?  
-❌ "I'd use microservices because they're better" — no justification  
-❌ Ignoring mobile vs web differences (no BFF)  
-❌ No NFRs / no scale estimate  
 
 ---
 
