@@ -402,7 +402,7 @@ class NameComparator implements Comparator<Student> {
 	    - `getValue()` → returns value.
 	    - `setValue(Object v)` → updates value.
 
-### 📌 HashMap
+### 📌 HashMap (C)
 - **Underlying DS:** <mark style="background: #D2B3FFA6;">Hash table</mark>.
 - **Duplicates:** Keys not allowed, values allowed.
 - **Nulls:** One `null` key allowed, multiple `null` values allowed.
@@ -411,69 +411,65 @@ class NameComparator implements Comparator<Student> {
 - **Performance:** <mark style="background: #BBFABBA6;">Very high for search operations.</mark>
 👉 **Best choice for fast key‑value lookups.**
 
-#### 📌 LinkedHashMap
+#### 📌 LinkedHashMap (C)
 - **Underlying DS:** Hash table + <mark style="background: #ADCCFFA6;">Linked</mark>List.
 - **Duplicates:** Keys not allowed, values allowed.
 - **Insertion Order:** <mark style="background: #ADCCFFA6;">Preserved</mark>.
 - **Nulls:** One `null` key allowed, multiple `null` values allowed.
 👉 **Best choice when ==predictable iteration order== of key‑value pairs is required.**
 
-## 📌 IdentityHashMap
+### 📌 IdentityHashMap (C)
 - **Underlying DS:** Hash table.
 - **Key Comparison:** Uses == (reference equality) instead of `equals()`.
 - **Use Case:** When <mark style="background: #ADCCFFA6;">identity comparison is required</mark> <mark style="background: #D2B3FFA6;">(e.g., caching)</mark>.
 
-## 📌 WeakHashMap
+### 📌 WeakHashMap (C)
 - **Underlying DS:** Hash table with weak references for keys.
-- **Garbage Collection:** Keys are eligible for GC when no longer referenced.
-- **Use Case:** Memory‑sensitive caches.
+- **Garbage Collection:** <mark style="background: #D2B3FFA6;">Keys are eligible for GC </mark> <mark style="background: #ADCCFFA6;">when no longer referenced.</mark>
+- **Use Case:** <mark style="background: #FFF3A3A6;">Memory‑sensitive caches.</mark>
 
-## 📌 SortedMap
+### 📌 SortedMap (I)
 - **Child of Map.**
 - Stores key‑value pairs in **ascending order of keys**.
-
-## 📌 NavigableMap
-
+### 📌 NavigableMap (I)
 - **Child of SortedMap.**
-- Provides navigation methods:
+- ==Provides navigation methods==:
     - `lowerEntry()`, `floorEntry()`, `ceilingEntry()`, `higherEntry()`.
 - Example implementation: **TreeMap**.
-
-## 📌 TreeMap
-- **Underlying DS:** Balanced Tree (Red‑Black Tree).
+#### 📌 TreeMap (C)
+- **Underlying DS:** <mark style="background: #FFB86CA6;">Balanced Tree (Red‑Black Tree).</mark>
 - **Duplicates:** Keys not allowed, values allowed.
 - **Order:** Keys maintained in **sorted order**.
 - **Nulls:** `null` keys not allowed, but `null` values allowed.
-- **Implements:** NavigableMap.
-
+- **Implements:** <mark style="background: #FFB86CA6;">NavigableMap.</mark>
 👉 **Best choice when sorted key‑value pairs are required.**
 
-## 📌 Hashtable
+
+### 📌Dictionary (AC)
+#### 📌 Hashtable (C)
 - **Underlying DS:** Hash table.
 - **Duplicates:** Keys not allowed, values allowed.
-- **Nulls:** Neither `null` key nor `null` value allowed.
-- **Thread Safety:** Synchronized → thread‑safe.
+- **Nulls:** <mark style="background: #FFB8EBA6;">Neither `null` key nor `null` value allowed.</mark>
+- **Thread Safety:** <mark style="background: #FFB86CA6;">Synchronized → thread‑safe.</mark>
 - **Legacy:** Introduced in 1.0v.
 
-👉 **Best choice when thread safety is required, but generally replaced by ConcurrentHashMap.**
-
-## 📌 Properties
+👉 **Best choice when thread safety is required, but generally replaced by ==ConcurrentHashMap==.**
+#### 📌 Properties (C)
 - **Child class of Hashtable.**
 - Represents **property files** (key‑value pairs of type String‑String).
 - Commonly used for configuration settings.
 
 ### ⚖️ Quick Contrast
 
-|Feature|HashMap|LinkedHashMap|IdentityHashMap|WeakHashMap|TreeMap|Hashtable|Properties|
-|---|---|---|---|---|---|---|---|
-|Order|Unordered|Insertion order preserved|Identity equality|GC‑sensitive|Sorted keys|Unordered|Unordered|
-|Nulls|1 null key, many null values|1 null key, many null values|Allowed|Allowed|No null keys, null values allowed|No nulls|No nulls|
-|Thread Safety|Not synchronized|Not synchronized|Not synchronized|Not synchronized|Not synchronized|Synchronized|Synchronized|
-|Legacy|Modern|Modern|Modern|Modern|Modern|Legacy|Legacy|
-|Use Case|Fast lookup|Predictable iteration|Identity comparison|Memory‑sensitive cache|Sorted map|Thread‑safe legacy|Config files|
+| Feature       | HashMap                      | LinkedHashMap                | IdentityHashMap     | WeakHashMap            | TreeMap                           | Hashtable          | Properties   |
+| ------------- | ---------------------------- | ---------------------------- | ------------------- | ---------------------- | --------------------------------- | ------------------ | ------------ |
+| Order         | Unordered                    | Insertion order preserved    | Identity equality   | GC‑sensitive           | Sorted keys                       | Unordered          | Unordered    |
+| Nulls         | 1 null key, many null values | 1 null key, many null values | Allowed             | Allowed                | No null keys, null values allowed | No nulls           | No nulls     |
+| Thread Safety | Not synchronized             | Not synchronized             | Not synchronized    | Not synchronized       | Not synchronized                  | Synchronized       | Synchronized |
+| Legacy        | Modern                       | Modern                       | Modern              | Modern                 | Modern                            | Legacy             | Legacy       |
+| Use Case      | Fast lookup                  | Predictable iteration        | Identity comparison | Memory‑sensitive cache | Sorted map                        | Thread‑safe legacy | Config files |
 
-### **ASCII Diagram – Map Hierarchy**
-
+### Map Hierarchy
 ```Code
 Map (I) [1.2v]
  ├── HashMap (C) [1.2v]
@@ -489,10 +485,9 @@ Map (I) [1.2v]
 ```
 
 👉 **Key Takeaway:**
-
 - **HashMap** → fast, allows nulls, unordered.
 - **LinkedHashMap** → ordered.
-- **IdentityHashMap** → identity comparison.
+- **IdentityHashMap** → ==identity comparison==.
 - **WeakHashMap** → GC‑sensitive cache.
 - **TreeMap** → sorted keys.
 - **Hashtable** → legacy, synchronized, no nulls.

@@ -257,7 +257,6 @@ A: <mark style="background: #ADCCFFA6;">Redis with Redisson's RLock</mark>. It u
 ---
 
 ## Topic 5 · Testing Strategy — Spring Ecosystem
-
 ### In One Line
 Effective Spring testing uses a layered strategy: <mark style="background: #FFB86CA6;">unit tests for domain logic</mark>, slice tests for layers, <mark style="background: #ADCCFFA6;">integration tests for full flows</mark>, <mark style="background: #ABF7F7A6;">contract tests for API boundaries</mark>.
 
@@ -423,7 +422,7 @@ public class Calculator {
 }
 ```
 
-## 1. `@Mock` (The Hollow Shell)
+### 1. `@Mock` (The Hollow Shell)
 When you tell Mockito to create a `@Mock` of your `Calculator`, Mockito creates a brand-new, completely fake object that _looks_ like a calculator on the outside, but has **zero real code inside it**.
 ```Java
 @Mock
@@ -437,7 +436,7 @@ System.out.println(result); // Prints: 0
 - **What happened?** Mockito completely intercepted the call. Because it is a full mock, the real code inside the `add` method (`return a + b;`) **never ran**.
 - **The Default Rule:** By default, every single method on a `@Mock` returns a default blank value: `0` for numbers, `null` for objects, and `false` for booleans. It will _only_ return something else if you manually hardcode it using a stub (e.g., `when(mockCalc.add(2,3)).thenReturn(5);`).
 
-## 2. `@Spy` (The Wire-Tapped Real Object)
+### 2. `@Spy` (The Wire-Tapped Real Object)
 When you create a `@Spy`, you start with a **living, breathing, real instance** of your class. Mockito simply wraps a sneaky tracking layer around it.
 ```Java
 @Spy
@@ -454,7 +453,7 @@ System.out.println(result); // Prints: 5
     verify(spyCalc).add(2, 3); // Mockito can confirm: "Yes, this real method ran!"
     ```
 
-## 3. The Partial Override (Why we use Spies)
+### 3. The Partial Override (Why we use Spies)
 The main reason architects use a `@Spy` is when they want the object to act completely real, _except_ for one specific method that they want to forcefully override.
 Imagine our real calculator has a method that fetches live exchange rates from the internet:
 ```Java
@@ -484,7 +483,7 @@ double tax = spyCalc.calculateTotalTax(100);
 // 2. When it hits getLiveExchangeRate(), it uses your fake value (1.2) instead of the internet!
 ```
 
-### Summary Checklist for Your Mental Map
+#### Summary Checklist for Your Mental Map
 - **`@Mock`:** A completely hollow proxy shell. No real code runs. Everything returns `null` or `0` unless you manually configure it. (Use for: Heavy things like external APIs or Databases).
 - **`@Spy`:** A real, functional object. The real logic executes normally, but you have the power to selectively override individual methods when needed. (Use for: Testing real class logic while bypassing an troublesome internal helper method).
 
@@ -493,6 +492,10 @@ A: <mark style="background: #FFB86CA6;">WireMock. It starts a local HTTP server 
 
 ---
 
+
+## [[Java- Collections Framework]]
+## [[Java - Sync vs Async Method Call]]
+## [[Java- Multithreading- wait(), notify(), and notifyAll()]]
 ## Day 3 Quick Reference
 
 | Topic              | Key Interview Answer                                                                            |

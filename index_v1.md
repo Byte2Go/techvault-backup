@@ -3,6 +3,7 @@
 ═══════════════════════════════════════════════════════════════════════════════
 **P1_Microservices_System_Design:** [[Day1_Microservices_ServiceDecomposition_BFF_APIGateway_HLD]]
 [[Day2_ServiceMesh_Polyglot_SPA_CQRS_ContractTesting]]
+[[UI Framework]]
 
 **P2_Java_Spring_Ecosystem:**
 [[Day3_Java_Spring_JVM_Hibernate_Concurrency_Testing]]

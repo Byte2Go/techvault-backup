@@ -377,7 +377,7 @@ Application → Cache (Redis)
 
 **Problem:** Cache entry expires → 1000 concurrent requests all go to DB simultaneously → DB overload
 
-**Fix 1 — Mutex lock on cache miss:**
+**Fix 1 — <mark style="background: #FFB86CA6;">Mutex lock</mark> on cache miss:**
 ```java
 public Product getProduct(String productId) {
     String cached = redis.get("product:" + productId);
@@ -400,7 +400,7 @@ public Product getProduct(String productId) {
 }
 ```
 
-**Fix 2 — Probabilistic early expiry (jitter):**
+**Fix 2 — Probabilistic early expiry (<mark style="background: #FFB86CA6;">jitter</mark>):**
 ```java
 // Add random jitter to TTL so entries don't all expire at the same time
 int ttl = 3600 + (int)(Math.random() * 300);  // 60-65 minutes
@@ -441,23 +441,25 @@ public boolean isAllowed(String userId) {
 ### Interview Q&A
 
 **Q: What is cache-aside vs write-through? When do you use each?**
-A: Cache-aside (lazy loading) populates the cache only on a miss — the application checks cache, misses, loads from DB, stores in cache. Simple, cache only holds what's been accessed. Write-through updates the cache on every write — always consistent but adds write latency. I use cache-aside for read-heavy data that's accessed infrequently (most products), and write-through for hot data that changes often and must always be current (user session, shopping cart). For very write-heavy workloads, write-behind (async DB write) maximizes write speed at the cost of some durability risk.
+A: <mark style="background: #FFB86CA6;">Cache-aside (lazy loading) populates the cache only on a miss</mark> — the application checks cache, misses, loads from DB, stores in cache. Simple, cache only holds what's been accessed. <mark style="background: #FFB86CA6;">Write-through updates the cache on every write</mark> — always consistent but adds write latency. <mark style="background: #ABF7F7A6;">I use cache-aside for read-heavy data that's accessed frequently but changes infrequently (most products),</mark> and <mark style="background: #ADCCFFA6;">write-through for hot data that changes often and must always be current (user session, shopping cart).</mark> <mark style="background: #FFB8EBA6;">For very write-heavy workloads, write-behind (async DB write) maximizes write speed at the cost of some durability risk.</mark>
 
 **Q: How do you handle cache invalidation?**
-A: Three approaches. Key-based invalidation: delete the cache key on write — simple and correct for single entities. TTL-based: let entries expire naturally — acceptable for data where brief staleness is OK (product prices, catalog). Event-driven: on data change, publish an invalidation event to all cache nodes or services. The hardest part is deciding TTL — too short means high cache miss rate and DB load; too long means stale data. For financial data (balances, prices), short TTL or write-through. For static catalog data, longer TTL with explicit invalidation on updates.
+A: Three approaches. 
+- **Key-based invalidation:** delete the cache key on write — simple and correct for single entities. 
+- **TTL-based:** let <mark style="background: #FFB86CA6;">entries expire naturally </mark>— acceptable for data where brief staleness is OK (product prices, catalog). 
+- **Event-driven:** <mark style="background: #FFB86CA6;">on data change</mark>, publish an invalidation event to all cache nodes or services. 
+<mark style="background: #FFB8EBA6;">The hardest part is deciding TTL — too short means high cache miss rate and DB load; too long means stale data. </mark> <mark style="background: #ABF7F7A6;">For financial data (balances, prices), short TTL or write-through. For static catalog data, longer TTL with explicit invalidation on updates.</mark>
 
 ---
 
 ## Topic 5 · Database-per-Service Pattern
-
 ### In One Line
 Each microservice owns its database — no shared schemas, no cross-service joins — this is the foundation of true service independence.
 
 ### Why Database-per-Service
-
 ```
 WRONG — Shared database:
-  OrderService ──┐
+  OrderService ───┐
   PaymentService ─┤──→ Shared PostgreSQL DB
   UserService   ──┘
 
@@ -479,10 +481,9 @@ RIGHT — Database per service:
 ```
 
 ### Cross-Service Data Queries — Solving Without Joins
-
 **Problem:** BFF needs order + customer name in one response.
 
-**Option 1 — API Composition (BFF aggregates):**
+**Option 1 — API Composition (<mark style="background: #FFB86CA6;">BFF aggregates</mark>):**
 ```
 Web BFF:
   1. Call OrderService: GET /orders/123 → {orderId, customerId, items, total}
@@ -509,7 +510,6 @@ Event projector builds a denormalized "OrderWithCustomer" read model:
 ```
 
 ### Migration Path — Shared DB to DB-per-Service
-
 ```
 Step 1: Separate schemas within same DB server
   orders_schema, payments_schema — same Postgres, different schemas
@@ -526,6 +526,50 @@ Step 3: Separate DB servers
 Step 4: (Optional) Change technology
   Move CatalogService from Postgres to Elasticsearch
 ```
+
+
+#### Explanation: The Golden Rule of Database Migration
+> **Never separate your physical infrastructure at the same time you change your software logic.** If you drop database rules and move to separate servers simultaneously, any network failure or application bug will result in immediate, catastrophic data corruption. ==You must divorce the data _logically_ before you divorce it _physically_.==
+
+##### 1: Logical Schema Isolation (The Boundary Phase)
+You group your database tables into isolated logical boundaries inside the exact same physical database instance.
+- **Action:** Move your tables into distinct schemas (e.g., `orders_schema` and `payments_schema` inside the same Postgres instance).
+- **Enforcement:** Change the database user credentials. The `PaymentService` is now configurationally restricted to _only_ connect to the `payments_schema`. <mark style="background: #FFB8EBA6;">It no longer has direct write permissions to the orders tables.</mark>
+- **Current Status of the Rule:** ==The physical **Database Foreign Key (FK)** constraint ==remains fully active across the schemas.
+
+##### Step 2: Dual-Mode Reads & Application Guard (The Safety Net Phase)
+This is the high-risk engineering window where <mark style="background: #FFB86CA6;">you train the application to become the data validator</mark> while using the database as a shield.
+1. **Write Path (The App Guard):** You rewrite the `PaymentService` code. Before it allows a payment transaction write to hit the database, <mark style="background: #ADCCFFA6;">it must now perform a network API call to the `OrderService` to ask: _"Does Order #12345 exist?"_</mark>
+2. **Read Path (The Dual-Mode Test):** To verify that this new API check is bulletproof, you run **Dual-Mode Reads**. Your validation logic secretly checks _both_ paths: it runs the new network API call, and it also utilizes direct database access (sighting) to look up the order directly. It compares the answers in your logging framework.
+3. **Data Protection:** **The Database Foreign Key is NOT deleted yet.** If your new API code has a bug and mistakenly approves a payment for a non-existent order, the active database Foreign Key will catch it at the last second and violently block the write. Your data remains 100% clean.
+
+```
+ 1. User Requests Payment ──► [ PaymentService App Code ]
+                                         │
+                                         ▼
+                         Runs Dual-Validation on READS
+                         ├──► Check A: Direct DB Query (Sight)
+                         └──► Check B: Network API Call to OrderService
+                                         │
+          If BOTH agree order exists ────┴──► 2. Execute WRITE to DB
+                                                      │
+                       [ SAFETY NET ACTIVE ] ─────────┼──► If API failed and                                                           │   order doesn't exist,
+                                                      │    Database FK blocks                                                          ▼     the write here!
+                                              [ Database Shield ]
+```
+
+#### Step 3: Remove the Constraints (The Promotion Phase)
+You watch your production error logs. Once your application-level API validation records a 100% accuracy match against the database checks over millions of real-world consumer operations, you can officially trust your code.
+- **Action:** Log into your database server and physically execute the `ALTER TABLE ... DROP CONSTRAINT` command to delete the Foreign Key.
+- **Result:** The database security guard is gone. Your application code is now the official, primary shield protecting the data ecosystem from corruption.
+##### Step 4: Physical Separation (The Infrastructure Phase)
+Now that your software code has been running successfully without a database Foreign Key for days or weeks, your services are completely decoupled.
+- **Action:** Physically migrate `payments_schema` off the shared server and onto its own independent, isolated Postgres database instance. Update the connection string environment variables in your `PaymentService`.
+- **Result:** Cross-database foreign keys are now completely physically impossible, but your platform experiences **zero downtime or disruption** because your application-level network API checks were already fully trained to handle validation.
+#### Core Takeaways to Remember
+- **Why keep the FK in Step 2?** It serves as an automated, fallback safety net while you test your new network code against live traffic.
+- **What is the risk of dropping the FK early?** Bad writes can bypass your untested application logic, creating orphaned rows and corrupt data models.
+- **When is it safe to separate servers?** Only after the database constraints are gone and the code has proven it can keep data consistent on its own.
 
 ---
 

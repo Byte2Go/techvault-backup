@@ -81,3 +81,56 @@ development expertise. Node.js is desirable.
 • Architecture: Strong experience in design patterns and ability to design small to large scale modules.
 • Cloud & Platform: PCF is preferred; Azure / AWS is desirable.
 • Value Add: Exposure to AI coding tools (Codex / Claude Code / Copilot) and FinTech domain knowledge.
+
+# EPAM - Solution Architect
+**Position Details**
+- **Role: Solution Architect**
+- **Experience: 15+ Years**
+- **Location: PAN INDIA**
+- **Employment Type: Full-Time**
+
+**Key Responsibilities**
+
+• Deep expertise in Java (8 or higher), with experience in Spring Framework (Spring Boot, Spring MVC, Spring Data) and Spring Reactive Programming is a plus.
+
+• Experience designing and building microservices architectures using Spring Cloud and RESTful APIs
+
+• Strong understanding of JPA/Hibernate, database integrations (e.g., Postgres, MySQL)
+
+• Working knowledge of NoSQL databases (Firestore, MongoDB, Cassandra)
+
+• Proficiency with message brokers and asynchronous processing (e.g., Pub/Sub, Kafka, RabbitMQ)
+
+• Familiarity with containerization and orchestration (Docker, Kubernetes)
+
+• Experience with API documentation tools like Swagger/OpenAPI
+
+• Experience in executing performance tests using tools like Locust, NeoLoad
+
+• Troubleshooting performance issues and bottlenecks
+
+• Familiarity with unit and integration testing frameworks (e.g., JUnit, Mockito, Playwright)
+
+**Desired skills**
+
+• Exposure to domain-driven design, architectural decision records, and solution documentation standards
+
+• Ability to guide technical teams, conduct code reviews, and mentor developers
+
+• Working knowledge of CI/CD pipelines (e.g., Jira, Jenkins, GitHub Actions, SonarQube and Code Security Scans)
+
+• Familiarity with DevOps practices, monitoring tools (e.g., Prometheus, Grafana), and observability frameworks
+
+• Knowledge of cloud platforms like GCP for backend deployment
+
+**Delivery and Execution**
+
+• Design, develop, and deliver backend solutions aligned with enterprise architecture and business goals.
+
+• Lead and mentor development teams in applying best practices for design patterns, clean code principles, and reusable frameworks.
+
+• Collaborate with architects to translate solution blueprints into high-quality, maintainable, and scalable implementations.
+
+• Ensure backend systems are scalable, resilient, secure, and optimized for performance
+
+• Review code, conduct peer reviews, and ensure adherence to coding standards, performance benchmarks, and compliance requirements.

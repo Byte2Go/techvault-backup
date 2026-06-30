@@ -184,7 +184,7 @@ A: The frontend team. This is the key insight — the BFF is not infrastructure,
 
 ---
 
-## Topic 3 · API Gateway Architecture
+## Topic 3 · API Gateway Architecture: [[API Gateway]]
 
 ### In One Line
 A <mark style="background: #BBFABBA6;">reverse proxy at the edge of your microservices system</mark> that handles cross-cutting concerns: <mark style="background: #FFB86CA6;">routing, auth, rate limiting, SSL termination, observability</mark>.

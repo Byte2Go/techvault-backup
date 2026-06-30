@@ -12,10 +12,10 @@
 ## Module 2 – Core Java ⭐⭐⭐⭐⭐
 
 - Collections Framework
-- HashMap vs Hashtable
+- [[Java- Hashtable vs HashMap vs ConcurrentHashMap]]
 - Multithreading
-- wait(), notify(), notifyAll()
-- async vs sync
+- [[Java- Multithreading- wait(), notify(), and notifyAll()]]
+- [[Java - Sync vs Async Method Call]]
 - Annotations
 
 ---
