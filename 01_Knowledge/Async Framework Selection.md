@@ -20,7 +20,7 @@ Introduced in Java 8, `CompletableFuture` i<mark style="background: #FFB86CA6;">
 
 - **How it works:** It allows developers to spawn a task off the main request thread, push it onto a background thread pool (`ForkJoinPool.commonPool()` or a custom bounded `Executor`), and stitch subsequent dependent actions together using a chain of fluent pipeline promises (`thenApply()`, `thenCombine()`, `exceptionally()`).
 - **The Fatal Limitation:** It easily degrades into an unmaintainable anti-pattern known as **Callback Hell**. Chaining complex, multi-step asynchronous conditions, handling scattered exception handling wrappers, and coordinating parallel timeouts across nested futures results in brittle code bases that are incredibly difficult to read, debug, and maintain.
-    
+
 
 #### Framework C: Java Virtual Threads / Project Loom (The Imperative Scale Game)
 Introduced as a production-ready feature in Java 21, **Virtual Threads** completely <mark style="background: #ABF7F7A6;">disrupt traditional Java concurrency rules by separating Java application threads from heavy underlying Operating System kernel threads.</mark>

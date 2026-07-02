@@ -58,7 +58,7 @@ Developers use software libraries (like **Resilience4j** in Java/Spring) directl
 - **Cons:** <mark style="background: #FF5582A6;">Language-dependent</mark>. If your company uses Java, Go, and Node.js, your engineering teams must maintain three separate circuit breaker configurations and codebases.
 ### Implementation Option B: Service Mesh (e.g., Istio)
 The platform team <mark style="background: #D2B3FFA6;">configures circuit breaking declaratively inside a service mesh</mark> <mark style="background: #BBFABBA6;">like **Istio or Consul**</mark>, ==shifting the responsibility to the local sidecar proxies (Envoy).==
-- **Pros:** Language agnostic. It works natively across all services in your cluster without changing a single line of application source code.
+- **Pros:** <mark style="background: #BBFABBA6;">Language agnostic. </mark>It works natively across all services in your cluster <mark style="background: #BBFABBA6;">without changing a single line of application source code.</mark>
 - **Cons:** Blind fallbacks. Because <mark style="background: #FFB8EBA6;">Envoy sits outside the application, it cannot construct a custom JSON payload or query an alternative cache database</mark>; <mark style="background: #FFB86CA6;">it can only return a generic HTTP 503 Service Unavailable network code</mark> back up the chain.
 ---
 ### The  Circuit Breaker Implementation
@@ -84,46 +84,24 @@ In a modern enterprise architecture, you use a **Two-Tier Architecture**. You do
 ```
 
 ### Tier 1: The Edge Protection (AWS API Gateway)
-**Industry Standard Practice:** You use **Aggressive Timeouts**, not complex serverless state machines.
+**Industry Standard Practice:** You ==use **Aggressive Timeouts**==, not complex serverless state machines.
 
-AWS API Gateway acts as a dumb, fast shield. If your Front-End API gets stuck, freezes, or lags, you do not let the user wait. You kill the connection at the edge.
+AWS API Gateway acts as a dumb, fast shield. If your Front-End API gets stuck, freezes, or lags, you do not let the user wait. <mark style="background: #FFB86CA6;">You kill the connection at the edge.</mark>
 - **The Setup:** Set a hard 2-second timeout on the integration routing.
 - **The Fallback:** If the backend doesn't reply in 2000ms, AWS API Gateway drops it and instantly throws a 408 Request Timeout or 504 Gateway Timeout back to the user.
 
 ### Tier 2: The Cluster Protection (Istio Ingress Gateway)
 **Industry Standard Practice:** You use **Outlier Detection** directly at the entrance proxy of your cluster, _before_ traffic hits your code.
 
-While API Gateway protects the user from waiting, the Service Mesh Ingress protects your pods from drowning in traffic. It watches the error rates. If your Front-End API starts returning 5xx codes or dropping connections, the Ingress trips the circuit and stops sending traffic to it.
-
-#### The Exact Production Configuration
-You apply this YAML to your cluster. This configuration ensures that if your Front-End API fails 3 times in a row, the ingress blocks traffic to it for 30 seconds to let it recover.
-
-```
-apiVersion: networking.istio.io/v1alpha3
-kind: DestinationRule
-metadata:
-  name: frontend-api-breaker
-  namespace: production
-spec:
-  host: frontend-service.production.svc.cluster.local
-  trafficPolicy:
-    connectionPool:
-      http:
-        http1MaxPendingRequests: 25        # Queue ceiling before shedding load
-    outlierDetection:
-      consecutive5xxErrors: 3             # 3 consecutive failures trips the circuit
-      interval: 10s                       # Scan window
-      baseEjectionTime: 30s               # Silence period given to the app to recover
-      maxEjectionPercent: 100             # Allow cutting off all traffic if everything is broken
-```
+<mark style="background: #ADCCFFA6;">While API Gateway protects the user from waiting</mark>, <mark style="background: #D2B3FFA6;">the Service Mesh Ingress protects your pods from drowning in traffic</mark>. <mark style="background: #D2B3FFA6;">It watches the error rates. If your Front-End API starts returning 5xx codes or dropping connections, the Ingress trips the circuit and stops sending traffic to it.</mark>
 
 ### What about Spring-level Resilience4j?
 
-**When to use it:** You **only** use application-level circuit breakers (like Resilience4j) for internal dependency failures where your code _must_ perform an intelligent fallback action.
-- **Example:** If your Front-End API calls a Payment Service, and the Payment Service dies, your Java code catches the error and executes a fallback method to save the transaction to a local database queue.
+**When to use it:** You **only** use application-level circuit breakers (like Resilience4j) for internal dependency failures <mark style="background: #FFB86CA6;">where your code _must_ perform an intelligent fallback action</mark>.
+- **Example:** If your Front-End API calls a Payment Service, and the Payment Service dies, <mark style="background: #FFB86CA6;">your Java code catches the error and executes a fallback method to save the transaction to a local database queue.</mark>
 - **The Rule:** If your fallback is just a generic "Service Unavailable" message, **delete the Java code** and let Tier 2 (the mesh) handle it via network infrastructure.
 
 ### Summary Checklist for Production
 1. **Protect the User:** Set a 2-second timeout inside **AWS API Gateway**.
 2. **Protect the Service:** Drop an Istio DestinationRule with outlierDetection right in front of your service to act as the automated circuit breaker.
-3. **Write Code Only for Business Logic:** Only use **Resilience4j** if your Java app needs to execute a complex functional fallback (like switching to a secondary database or queue). Never use it just to return a 503 error message.
+3. **Write Code Only for Business Logic:** ==Only use **Resilience4j** if your Java app needs to execute a complex functional fallback== (like switching to a secondary database or queue). <mark style="background: #FFB8EBA6;">Never use it just to return a 503 error message.</mark>

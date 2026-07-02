@@ -6,7 +6,7 @@
 
 ---
 
-## Topic 1 · Circuit Breaker — Resilience4j
+## Topic 1 · [[Circuit Breaker Pattern]]
 
 ### In One Line
 A circuit breaker stops calling a failing dependency and fails fast — <mark style="background: #FFB86CA6;">preventing cascading failures from taking down your entire system.</mark>
@@ -46,6 +46,11 @@ HALF-OPEN ←─────────────────── OPEN
 - **HALF-OPEN** — probe state; allows N trial calls to test if service recovered
 
 ### Resilience4j Configuration (Spring Boot)
+| **Component**           | **Core Responsibility**                                                                                                                                        | **Real-World Analogy**                                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **`CompletableFuture`** | **Asynchronous Execution Engine:** Offloads the execution from the main request thread to a background worker so the system doesn't block while waiting.       | Sending an order slip to the kitchen via a dumbwaiter so the waiter can instantly greet the next customer.          |
+| [[Bulkhead Pattern]]    | **Resource Allocator & Wall:** Restricts the total number of concurrent tasks allowed to target a specific service, protecting resources from being wiped out. | Watertight compartments inside a ship’s hull. If one compartment floods, the leak is contained and the ship floats. |
+
 
 ```yaml
 # application.yml
@@ -146,20 +151,38 @@ resilience4j:
 
 **Why:** If PaymentService is slow and consumes all 10 threads in its pool, InventoryService still has its own 10 threads — they don't starve each other. Without bulkhead, one slow downstream service eats all shared threads.
 
-### Interview Q&A
+### The Execution Lifecycle
+When a user triggers an action that utilizes all three components, the request passes through these defensive layers sequentially from the outside-in:
 
+```
+INCOMING REQUEST 
+       │
+       ▼
+1. [ CompletableFuture ] ──► Hands the task to a background worker thread.
+       │
+       ▼
+2. [ Bulkhead Guard ]    ──► Checks: "Is our assigned pool slot full?" 
+       │                     (If full, rejects immediately)
+       ▼
+3. [ CircuitBreaker ]    ──► Checks: "Is the circuit closed or open?"
+       │                     (If open, drops straight to Fallback Plan)
+       ▼
+4. LIVE NETWORK CALL     ──► Executes the remote outbound connection.
+```
+
+
+### Interview Q&A
 **Q: Explain circuit breaker states and when each applies.**
-A: Three states. Closed — normal operation; requests flow through; failures counted in a sliding window. When failure rate crosses the threshold (e.g., 50% of last 10 calls), circuit opens. Open — fast fail; no requests sent to the dependency; fallback invoked immediately; the system stops waiting and returns an error or cached response. After a wait duration (e.g., 30s), moves to half-open. Half-open — probe state; allows a limited number of trial calls. If they succeed, circuit closes (service recovered). If they fail, circuit reopens. This pattern prevents cascading failures — a struggling downstream service doesn't drag down the caller.
+A: Three states. Closed — normal operation; requests flow through; failures counted in a sliding window. <mark style="background: #FFB86CA6;">When failure rate crosses the threshold (e.g., 50% of last 10 calls), circuit opens. </mark>Open — fast fail; no requests sent to the dependency; fallback invoked immediately; the system stops waiting and returns an error or cached response. After a wait duration (e.g., 30s), moves to half-open. Half-open — probe state; allows a limited number of trial calls. If they succeed, circuit closes (service recovered). If they fail, circuit reopens. This pattern prevents cascading failures — a struggling downstream service doesn't drag down the caller.
 
 **Q: What is the difference between circuit breaker and retry? How do they work together?**
-A: Retry handles transient failures — network blip, temporary timeout — by attempting the call again with backoff. Circuit breaker handles sustained failures — dependency is actually down or overloaded — by stopping all calls and failing fast. They compose: retry is inner (tries 3 times), circuit breaker is outer (if 50% of recent calls fail, open the circuit and skip retries entirely). Without circuit breaker, retries on a dead service multiply load on something that can't handle it. The order matters — apply in this sequence: TimeLimiter → Bulkhead → CircuitBreaker → Retry → operation.
+A: <mark style="background: #ADCCFFA6;">**Retry** handles transient failures — network blip, temporary timeout — by attempting the call again with backoff. </mark> <mark style="background: #D2B3FFA6;">**Circuit breaker** handles sustained failures — dependency is actually down or overloaded — by stopping all calls and failing fast.</mark> They compose: retry is inner (tries 3 times), circuit breaker is outer (if 50% of recent calls fail, open the circuit and skip retries entirely). Without circuit breaker, retries on a dead service multiply load on something that can't handle it. The order matters — apply in this sequence: TimeLimiter → Bulkhead → CircuitBreaker → Retry → operation.
 
 ---
 
 ## Topic 2 · SLI / SLO / SLA / Error Budgets
-
 ### In One Line
-SLIs measure system health, SLOs set the target, SLAs are the contract with customers, and error budgets decide how much risk you can take — this is the language of reliability at senior level.
+<mark style="background: #BBFABBA6;">SLIs measure system health</mark>, <mark style="background: #FFB8EBA6;">SLOs set the target</mark>, <mark style="background: #FFB86CA6;">SLAs are the contract with customers</mark>, and error budgets decide how much risk you can take — this is the language of reliability at senior level.
 
 ### Definitions
 
@@ -182,7 +205,6 @@ Error Budget — How much you can fail and still meet SLO
 ```
 
 ### Choosing Good SLIs
-
 ```
 Availability SLI:
   success_requests / total_requests × 100
@@ -264,17 +286,18 @@ groups:
 ### Interview Q&A
 
 **Q: How would you design an SLO for a payment API?**
-A: Start with what matters to users — can they pay successfully, and how fast? SLI 1: availability — percentage of payment requests returning non-5xx. SLI 2: latency — percentage of requests completing under 3 seconds (payment users tolerate more latency than a search query). SLI 3: business success rate — percentage of payments that actually succeed (not just HTTP 200; the downstream Razorpay call must also succeed). SLO: 99.95% availability, 99% of requests under 3s, error budget of 21.6 minutes/month. Error budget policy: if we burn more than 50% in two weeks, freeze feature deployments until reliability work catches up.
+A: Start with what matters to users — can they pay successfully, and how fast? 
+SLI 1: availability — percentage of payment requests returning non-5xx. 
+SLI 2: latency — percentage of requests completing under 3 seconds (payment users tolerate more latency than a search query). SLI 3: business success rate — percentage of payments that actually succeed (not just HTTP 200; the downstream Razorpay call must also succeed). SLO: 99.95% availability, 99% of requests under 3s, error budget of 21.6 minutes/month. Error budget policy: if we burn more than 50% in two weeks, freeze feature deployments until reliability work catches up.
 
 ---
 
 ## Topic 3 · Distributed Tracing
 
 ### In One Line
-Distributed tracing follows a single request across all microservices, showing exactly where time was spent and where failures occurred — impossible to debug complex systems without it.
+<mark style="background: #FFB86CA6;">Distributed tracing follows a single request across all microservices</mark>, <mark style="background: #ADCCFFA6;">showing exactly where time was spent and where failures occurred</mark> — impossible to debug complex systems without it.
 
 ### The Problem
-
 ```
 User reports: "My order placement takes 8 seconds sometimes"
 
@@ -348,7 +371,7 @@ HTTP Header: traceparent: 00-abc123-def456-01
 Kafka Header: also carries trace context → async calls traceable end-to-end
 ```
 
-### Correlation IDs in Logs
+### ==Correlation IDs== in Logs
 
 ```java
 // MDC (Mapped Diagnostic Context) — adds fields to every log line
@@ -382,12 +405,12 @@ public class TraceIdFilter implements Filter {
 
 ### Jaeger vs Zipkin vs AWS X-Ray
 
-| Tool | Best For | Notes |
-|---|---|---|
-| **Jaeger** | Self-hosted, Kubernetes | Open source; rich UI; Uber-born |
-| **Zipkin** | Simple self-hosted | Older; simpler; good for small teams |
-| **AWS X-Ray** | AWS-native | No infra ops; integrates with CloudWatch |
-| **Grafana Tempo** | Grafana ecosystem | Works with Prometheus + Loki stack |
+| Tool              | Best For                | Notes                                    |
+| ----------------- | ----------------------- | ---------------------------------------- |
+| **Jaeger**        | Self-hosted, Kubernetes | Open source; rich UI; Uber-born          |
+| **Zipkin**        | Simple self-hosted      | Older; simpler; good for small teams     |
+| ==**AWS X-Ray**== | AWS-native              | No infra ops; integrates with CloudWatch |
+| **Grafana Tempo** | Grafana ecosystem       | Works with Prometheus + Loki stack       |
 
 ---
 
