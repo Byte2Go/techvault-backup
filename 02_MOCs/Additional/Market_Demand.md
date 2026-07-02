@@ -134,3 +134,176 @@ development expertise. Node.js is desirable.
 • Ensure backend systems are scalable, resilient, secure, and optimized for performance
 
 • Review code, conduct peer reviews, and ensure adherence to coding standards, performance benchmarks, and compliance requirements.
+
+# CSI Global - Solution Architect
+**JD – Solution Architect (Enterprise / Cloud / Microservices)**
+
+---
+
+**Role Summary**
+
+We are looking for an experienced **Solution Architect** to design and deliver scalable, secure, and high-performance enterprise applications. The role involves owning **end-to-end architecture**, driving **cloud-native transformation**, and collaborating with business and engineering teams to build future-ready digital platforms.
+
+The ideal candidate will have strong expertise in **microservices, cloud platforms, API-led integration, and enterprise modernization**, along with hands-on experience in **Java ecosystem and distributed systems**.
+
+---
+
+**Tech Stack**
+
+**Core Stack**
+
+- Java, Spring Boot, Spring Cloud
+- REST APIs, Microservices architecture
+- Kafka / Messaging systems
+
+**Cloud & Platforms**
+
+- AWS (primary), Azure (good to have), OpenShift / Kubernetes
+- Serverless, Containers (Docker, Kubernetes)
+
+**Integration & Architecture**
+
+- API Gateway, API-first design
+- Mule ESB / Apache Camel (nice to have)
+- Event-driven architecture
+
+**DevOps & Tools**
+
+- CI/CD (Jenkins, Azure DevOps, Git)
+- Terraform / IaC (good to have)
+- Monitoring: Splunk, ELK, CloudWatch
+
+**Data & Security**
+
+- RDBMS + NoSQL (Oracle, MySQL, MongoDB, Cassandra)
+- Security: OAuth2, SAML, IAM, SSL, OWASP
+
+**Emerging**
+
+- Exposure to **Gen AI / LLM use cases** (nice to have)
+
+---
+
+**Must-Have Skills (Core Hiring Signals)**
+
+- 15+ years of IT experience with **5+ years in Solution Architecture**
+- Strong expertise in:
+
+- **Microservices & distributed systems architecture**
+- **Cloud-native design (AWS priority)**
+- **API-led integration & event-driven architecture**
+
+- Hands-on experience in:
+
+- **Java, Spring Boot ecosystem**
+- **Kafka / messaging frameworks**
+
+- Proven experience in:
+
+- **Legacy modernization (monolith → microservices)**
+- **Cloud migration strategies**
+
+- Strong understanding of:
+
+- **Scalability, resilience, performance tuning**
+- **Security & compliance (OAuth2, IAM, OWASP)**
+
+- Experience driving:
+
+- **Architecture governance (HLD/LLD, design reviews)**
+- **NFRs (performance, availability, DR, security)**
+
+---
+
+**Nice-to-Have Skills**
+
+- Multi-cloud exposure: AWS + Azure + GCP
+- Integration frameworks: Mule ESB, Apache Camel
+- OpenShift / PaaS platforms
+- Presales / RFP / solution consulting exposure
+- Domain exposure:
+
+- Banking / Payments / Insurance (strong preference)
+- Healthcare / Logistics / Retail also relevant
+
+- Gen AI / Automation use cases in architecture
+
+---
+
+**Key Responsibilities**
+
+**Architecture & Design**
+
+- Define **end-to-end solution architecture** aligned to business goals
+- Create **HLDs, LLDs, architecture blueprints**
+- Select appropriate **technology stack & design patterns**
+
+**Cloud & Modernization**
+
+- Drive **cloud adoption strategy (AWS/Azure)**
+- Lead **legacy system modernization to microservices**
+- Architect **scalable, resilient cloud-native platforms**
+
+**Engineering Leadership**
+
+- Guide development teams on **best practices & implementation**
+- Conduct **design reviews, code reviews, architecture governance**
+- Resolve **complex technical challenges**
+
+**Integration & APIs**
+
+- Design **API-first architectures**
+- Implement **event-driven and messaging-based systems**
+- Ensure seamless **integration across enterprise systems**
+
+**DevOps & Delivery**
+
+- Enable **CI/CD pipelines and DevOps adoption**
+- Ensure **automated deployments & observability**
+
+**Stakeholder Management**
+
+- Work with **business, product, and leadership stakeholders**
+- Translate **business requirements into technical solutions**
+- Act as **trusted advisor in architecture decisions**
+
+---
+
+**Knockout Criteria (Must Screen Early)**
+
+- No **Solution Architecture ownership** (only dev/lead level)
+- Lack of **cloud architecture exposure (AWS/Azure)**
+- No experience in **microservices architecture**
+- Missing **Java/Spring ecosystem exposure**
+- No involvement in **design/architecture decisions**
+- Pure support/maintenance background
+
+---
+
+**Red Flags**
+
+- Only **high-level architecture (no hands-on) OR only coding (no architecture ownership)**
+- No exposure to **large-scale / enterprise systems**
+- Limited or outdated tech stack (no cloud, no microservices)
+- No stakeholder interaction or leadership exposure
+
+---
+
+**Ideal Candidate Persona (From These 4 Profiles)**
+
+- **T-shaped Architect**
+
+- Strong **hands-on engineering depth (Java, APIs, cloud)**
+- Plus **architecture strategy & governance ability**
+
+- Experience across:
+
+- **Modernization + Cloud + Integration-heavy systems**
+
+- Has worked in:
+
+- **Large enterprise programs / global teams**
+
+- Comfortable in:
+
+- **Ambiguity, stakeholder discussions, and solution ownership**

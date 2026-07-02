@@ -12,7 +12,6 @@ In a large microservices ecosystem, services are constantly calling other servic
 As thousands of users attempt to hit the checkout button, <mark style="background: #FF5582A6;">the Checkout Service will quickly run out of available threads or memory blocks</mark> <mark style="background: #FFB86CA6;">while waiting on those dead connections.</mark> Within seconds, the Checkout Service crashes, triggering a domino effect that can bring down the entire system.
 
 ## The Three States of a Circuit Breaker
-
 A circuit breaker wraps around an internal client or HTTP network call and monitors all outbound traffic. It operates like a finite state machine with three distinct phases:
 
 ```
@@ -42,15 +41,14 @@ A circuit breaker wraps around an internal client or HTTP network call and monit
 The circuit is intact, and traffic flows completely unhindered. <mark style="background: #BBFABBA6;">The breaker tracks the **telemetry** of the calls (the ratio of successful requests versus failures or timeouts)</mark>. As long as the error rate stays below a specified threshold (e.g., less than $5\%$ failure over a sliding window of 100 requests), it remains closed.
 
 ### 2. Open State (Failing Fast)
-If the downstream service's error rate crosses your defined threshold (e.g., $15\%$ of recent requests fail or timeout), **the circuit breaker trips and flips to OPEN.**
+<mark style="background: #FFB8EBA6;">If the downstream service's error rate crosses your defined threshold</mark> (e.g., $15\%$ of recent requests fail or timeout), **the circuit breaker trips and flips to OPEN.**
 - **What happens:** For a set period (e.g., 30 seconds), the breaker intercepts all subsequent traffic directed at that service and <mark style="background: #ABF7F7A6;">**fails fast immediately** without ever placing a network call.</mark>
 - **The Benefit:** <mark style="background: #BBFABBA6;">It stops wasting system resources on a service that is known to be broken,</mark> shields the downstream service from being completely overwhelmed with traffic while it is trying to heal, and instantly returns a local fallback response (like a cached product list or a clean _"Payment system temporary unavailable"_ message).
 
 ### 3. Half-Open State (The Trial Run)
-Once the cool-down timer expires, the breaker <mark style="background: #FFB86CA6;">moves into the **Half-Open** state</mark>. It cautiously allows a limited, small percentage of trial traffic to pass through to the downstream service.
-
-- **If the trial requests succeed:** The breaker assumes the service has recovered, resets its error counters, and returns to the **Closed** state (resuming full operations).
-- **If a single trial request fails or hangs:** The breaker assumes the service is still broken, immediately re-trips back to the **Open** state, and restarts the cool-down timer.
+Once the cool-down timer expires, the breaker <mark style="background: #FFB86CA6;">moves into the **Half-Open** state</mark>. It cautiously <mark style="background: #D2B3FFA6;">allows a limited, small percentage of trial traffic</mark> to pass through to the downstream service.
+- **If the trial requests succeed:** <mark style="background: #D2B3FFA6;">The breaker assumes the service has recovered</mark>, resets its error counters, and returns to the **Closed** state (resuming full operations).
+- **If a single trial request fails or hangs:** <mark style="background: #D2B3FFA6;">The breaker assumes the service is still broken,</mark> immediately re-trips back to the **Open** state, and restarts the cool-down timer.
 
 ## Where Does This Get Implemented?
 Depending on your architecture, you <mark style="background: #FFB86CA6;">can implement circuit breaking at either the **application code layer or the infrastructure network layer**</mark>:
@@ -59,7 +57,7 @@ Developers use software libraries (like **Resilience4j** in Java/Spring) directl
 - **Pros:** Highly context-aware. The <mark style="background: #FFF3A3A6;">code knows exactly how to handle a fallback</mark> (e.g., _"<mark style="background: #ABF7F7A6;">If the DB is down, query the Redis cache; if Redis is down, return a hardcoded list of top-5 generic products</mark>"_).
 - **Cons:** <mark style="background: #FF5582A6;">Language-dependent</mark>. If your company uses Java, Go, and Node.js, your engineering teams must maintain three separate circuit breaker configurations and codebases.
 ### Implementation Option B: Service Mesh (e.g., Istio)
-The platform team <mark style="background: #D2B3FFA6;">configures circuit breaking declaratively inside a service mesh</mark> <mark style="background: #BBFABBA6;">like **Istio or Consul**</mark>, shifting the responsibility to the local sidecar proxies (Envoy).
+The platform team <mark style="background: #D2B3FFA6;">configures circuit breaking declaratively inside a service mesh</mark> <mark style="background: #BBFABBA6;">like **Istio or Consul**</mark>, ==shifting the responsibility to the local sidecar proxies (Envoy).==
 - **Pros:** Language agnostic. It works natively across all services in your cluster without changing a single line of application source code.
 - **Cons:** Blind fallbacks. Because <mark style="background: #FFB8EBA6;">Envoy sits outside the application, it cannot construct a custom JSON payload or query an alternative cache database</mark>; <mark style="background: #FFB86CA6;">it can only return a generic HTTP 503 Service Unavailable network code</mark> back up the chain.
 ---

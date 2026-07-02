@@ -510,6 +510,8 @@ Event projector builds a denormalized "OrderWithCustomer" read model:
 ```
 
 ### Migration Path — Shared DB to DB-per-Service
+[[Monolithic to Microservice- Shared Database to Database-per-Service Migration]]
+
 ```
 Step 1: Separate schemas within same DB server
   orders_schema, payments_schema — same Postgres, different schemas
@@ -528,55 +530,12 @@ Step 4: (Optional) Change technology
 ```
 
 
-#### Explanation: The Golden Rule of Database Migration
-> **Never separate your physical infrastructure at the same time you change your software logic.** If you drop database rules and move to separate servers simultaneously, any network failure or application bug will result in immediate, catastrophic data corruption. ==You must divorce the data _logically_ before you divorce it _physically_.==
-
-##### 1: Logical Schema Isolation (The Boundary Phase)
-You group your database tables into isolated logical boundaries inside the exact same physical database instance.
-- **Action:** Move your tables into distinct schemas (e.g., `orders_schema` and `payments_schema` inside the same Postgres instance).
-- **Enforcement:** Change the database user credentials. The `PaymentService` is now configurationally restricted to _only_ connect to the `payments_schema`. <mark style="background: #FFB8EBA6;">It no longer has direct write permissions to the orders tables.</mark>
-- **Current Status of the Rule:** ==The physical **Database Foreign Key (FK)** constraint ==remains fully active across the schemas.
-
-##### Step 2: Dual-Mode Reads & Application Guard (The Safety Net Phase)
-This is the high-risk engineering window where <mark style="background: #FFB86CA6;">you train the application to become the data validator</mark> while using the database as a shield.
-1. **Write Path (The App Guard):** You rewrite the `PaymentService` code. Before it allows a payment transaction write to hit the database, <mark style="background: #ADCCFFA6;">it must now perform a network API call to the `OrderService` to ask: _"Does Order #12345 exist?"_</mark>
-2. **Read Path (The Dual-Mode Test):** To verify that this new API check is bulletproof, you run **Dual-Mode Reads**. Your validation logic secretly checks _both_ paths: it runs the new network API call, and it also utilizes direct database access (sighting) to look up the order directly. It compares the answers in your logging framework.
-3. **Data Protection:** **The Database Foreign Key is NOT deleted yet.** If your new API code has a bug and mistakenly approves a payment for a non-existent order, the active database Foreign Key will catch it at the last second and violently block the write. Your data remains 100% clean.
-
-```
- 1. User Requests Payment ──► [ PaymentService App Code ]
-                                         │
-                                         ▼
-                         Runs Dual-Validation on READS
-                         ├──► Check A: Direct DB Query (Sight)
-                         └──► Check B: Network API Call to OrderService
-                                         │
-          If BOTH agree order exists ────┴──► 2. Execute WRITE to DB
-                                                      │
-                       [ SAFETY NET ACTIVE ] ─────────┼──► If API failed and                                                           │   order doesn't exist,
-                                                      │    Database FK blocks                                                          ▼     the write here!
-                                              [ Database Shield ]
-```
-
-#### Step 3: Remove the Constraints (The Promotion Phase)
-You watch your production error logs. Once your application-level API validation records a 100% accuracy match against the database checks over millions of real-world consumer operations, you can officially trust your code.
-- **Action:** Log into your database server and physically execute the `ALTER TABLE ... DROP CONSTRAINT` command to delete the Foreign Key.
-- **Result:** The database security guard is gone. Your application code is now the official, primary shield protecting the data ecosystem from corruption.
-##### Step 4: Physical Separation (The Infrastructure Phase)
-Now that your software code has been running successfully without a database Foreign Key for days or weeks, your services are completely decoupled.
-- **Action:** Physically migrate `payments_schema` off the shared server and onto its own independent, isolated Postgres database instance. Update the connection string environment variables in your `PaymentService`.
-- **Result:** Cross-database foreign keys are now completely physically impossible, but your platform experiences **zero downtime or disruption** because your application-level network API checks were already fully trained to handle validation.
-#### Core Takeaways to Remember
-- **Why keep the FK in Step 2?** It serves as an automated, fallback safety net while you test your new network code against live traffic.
-- **What is the risk of dropping the FK early?** Bad writes can bypass your untested application logic, creating orphaned rows and corrupt data models.
-- **When is it safe to separate servers?** Only after the database constraints are gone and the code has proven it can keep data consistent on its own.
-
 ---
 
-## Topic 6 · Read Replicas & Replication Strategies
+## Topic 6 · [[Read Replicas & Replication Strategies]]
 
 ### In One Line
-Read replicas offload read traffic from the primary, enabling horizontal read scaling — at the cost of eventual consistency between primary and replicas.
+<mark style="background: #BBFABBA6;">Read replicas offload read traffic from the primary</mark>, <mark style="background: #FFB86CA6;">enabling horizontal read scaling</mark> —<mark style="background: #FFB8EBA6;"> at the cost of eventual consistency between primary and replicas.</mark>
 
 ### PostgreSQL Replication
 
@@ -620,20 +579,18 @@ public OrderId placeOrder(PlaceOrderCommand cmd) { ... }
 | **Multi-AZ (AWS RDS)** | Sync standby in different AZ — auto-failover | HA requirement; transparent failover <60s |
 
 ### When NOT to Use Read Replicas
-
 - Data just written and immediately queried (replication lag → stale read)
 - Use primary for reads that must reflect the latest write (e.g., immediately after placing an order, show order status)
 - Pattern: write to primary, read from primary for the immediate response, then subsequent reads can use replica
 
 ---
 
-## Topic 7 · Elasticsearch / OpenSearch
+## Topic 7 · [[Distributed Search Engines- Elasticsearch & OpenSearch]]
 
 ### In One Line
-Elasticsearch is the go-to for full-text search, faceted filtering, and relevance ranking — built on Apache Lucene, it can handle queries that would kill a relational DB.
+<mark style="background: #ADCCFFA6;">Elasticsearch is the go-to for full-text search and relevance ranking — built on Apache</mark> Lucene, <mark style="background: #FFB86CA6;">it can handle queries that would kill a relational DB.</mark>
 
 ### Core Concepts
-
 ```
 Index  = Table in SQL
 Document = Row (JSON)
@@ -714,18 +671,17 @@ Pattern 3 — Debezium CDC (no code change):
 ```
 
 ### When NOT to Use Elasticsearch
-
 - Primary data store — use as a read model alongside a source-of-truth DB
 - Simple exact-match queries — a properly indexed PostgreSQL handles this better
-- ACID transactions — ES is eventually consistent, not transactional
+- ACID transactions — ==ES is eventually consistent, not transactional==
 - Small datasets — overhead not worth it below ~100K documents
 
 ---
 
-## Topic 8 · Vector Databases — RAG Foundation
+## Topic 8 · [[Vector Databases - RAG Foundation]]
 
 ### In One Line
-Vector databases store and search high-dimensional embeddings — the foundation of semantic search and Retrieval-Augmented Generation (RAG) for AI systems.
+Vector databases store and search high-dimensional embeddings — <mark style="background: #FFB86CA6;">the foundation of semantic search and Retrieval-Augmented Generation (RAG) </mark>for AI systems.
 
 ### Why Vector Search
 
@@ -752,14 +708,14 @@ Dissimilar meaning → vectors far apart
 
 ### Vector DB Options
 
-| DB | Type | Best For | Notes |
-|---|---|---|---|
-| **pgvector** | PostgreSQL extension | Small-medium scale, existing Postgres | No extra infra; SQL + vectors |
-| **Pinecone** | Managed cloud | Production RAG, no ops | Expensive at scale; very fast |
-| **Weaviate** | Self-hosted / managed | Multi-modal, hybrid search | Open source; rich features |
-| **Qdrant** | Self-hosted / managed | High performance, filtering | Rust-based; very fast |
-| **ChromaDB** | Local / prototype | Development, testing | Not production-grade |
-| **Amazon OpenSearch** | Managed (AWS) | AWS-native RAG | k-NN plugin |
+| DB                    | Type                  | Best For                              | Notes                         |
+| --------------------- | --------------------- | ------------------------------------- | ----------------------------- |
+| **pgvector**          | PostgreSQL extension  | Small-medium scale, existing Postgres | No extra infra; SQL + vectors |
+| ==**Pinecone**==      | Managed cloud         | Production RAG, no ops                | Expensive at scale; very fast |
+| **Weaviate**          | Self-hosted / managed | Multi-modal, hybrid search            | Open source; rich features    |
+| **Qdrant**            | Self-hosted / managed | High performance, filtering           | Rust-based; very fast         |
+| **ChromaDB**          | Local / prototype     | Development, testing                  | Not production-grade          |
+| **Amazon OpenSearch** | Managed (AWS)         | AWS-native RAG                        | k-NN plugin                   |
 
 ### pgvector — PostgreSQL Extension
 
@@ -836,20 +792,20 @@ User query →
 
 ## Day 8 Quick Reference
 
-| Topic | Key Interview Answer |
-|---|---|
-| DB selection | Match DB to access pattern; default to PostgreSQL; migrate out when you have a real reason |
-| Composite index | Equality columns first, range/sort last; partial index for filtered subsets |
-| PostgreSQL partition | Range partition by date; query pruning; DROP partition = instant archive |
-| JSONB | Sparse optional attributes; GIN index for containment queries; don't replace proper columns |
-| Cache-aside | Check cache → miss → load DB → store with TTL; invalidate on write |
-| Write-through | Write DB + cache together; always fresh; higher write cost |
-| Cache stampede | Mutex lock OR TTL jitter prevents thundering herd on expiry |
-| DB-per-service | No shared schemas; cross-service data via API composition or event-driven duplication |
-| Read replica | readOnly=true → replica; write → primary; watch for replication lag on immediate reads |
-| Elasticsearch | text=analyzed (full-text); keyword=exact (facets); sync via Kafka events, not dual write |
-| pgvector | PostgreSQL extension; cosine similarity; ivfflat index; for RAG and semantic search |
-| Hybrid search | BM25 + vector search + RRF re-ranking = best RAG retrieval quality |
+| Topic                | Key Interview Answer                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------- |
+| DB selection         | Match DB to access pattern; default to PostgreSQL; migrate out when you have a real reason  |
+| Composite index      | Equality columns first, range/sort last; partial index for filtered subsets                 |
+| PostgreSQL partition | Range partition by date; query pruning; DROP partition = instant archive                    |
+| JSONB                | Sparse optional attributes; GIN index for containment queries; don't replace proper columns |
+| Cache-aside          | Check cache → miss → load DB → store with TTL; invalidate on write                          |
+| Write-through        | Write DB + cache together; always fresh; higher write cost                                  |
+| Cache stampede       | Mutex lock OR TTL jitter prevents thundering herd on expiry                                 |
+| DB-per-service       | No shared schemas; cross-service data via API composition or event-driven duplication       |
+| Read replica         | readOnly=true → replica; write → primary; watch for replication lag on immediate reads      |
+| Elasticsearch        | text=analyzed (full-text); keyword=exact (facets); sync via Kafka events, not dual write    |
+| pgvector             | PostgreSQL extension; cosine similarity; ivfflat index; for RAG and semantic search         |
+| Hybrid search        | BM25 + vector search + RRF re-ranking = best RAG retrieval quality                          |
 
 ---
 

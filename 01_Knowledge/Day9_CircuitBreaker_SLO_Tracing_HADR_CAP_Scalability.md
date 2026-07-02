@@ -9,7 +9,7 @@
 ## Topic 1 · Circuit Breaker — Resilience4j
 
 ### In One Line
-A circuit breaker stops calling a failing dependency and fails fast — preventing cascading failures from taking down your entire system.
+A circuit breaker stops calling a failing dependency and fails fast — <mark style="background: #FFB86CA6;">preventing cascading failures from taking down your entire system.</mark>
 
 ### The Problem Without Circuit Breaker
 
