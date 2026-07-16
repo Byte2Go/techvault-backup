@@ -307,3 +307,167 @@ The ideal candidate will have strong expertise in **microservices, cloud platfo
 - Comfortable in:
 
 - **Ambiguity, stakeholder discussions, and solution ownership**
+
+---
+# Payment SME SA
+
+## Job Description
+
+Role Overview Own architecture for Payments, Reconciliation, and Cash Management streams, ensuring transaction integrity, financial accuracy, and high-volume scalability using event-driven patterns. Key Responsibilities • Design end-to-end payment flows (initiation → processing → settlement → reconciliation) • Define event-driven integration patterns between payment engines, GL, and downstream systems • Architect reconciliation frameworks ensuring accuracy, break management, and auditability • Support cash positioning, liquidity management, and treasury integrations • Ensure high availability, fault tolerance, and real-time processing capability • Collaborate with Operations Monitoring and Billing teams for end-to-end alignment • Review and validate vendor and third-party payment solutions Experience Required • 8–12 years experience with 3+ years as Solution Architect / Lead Architect • Strong domain expertise in Payments and Financial Processing systems • Experience in banking transformation or payment modernization programs Technical & Domain Skills • Hands-on experience in payment systems (SEPA, SWIFT, CHAPS, Faster Payments) • Strong knowledge of reconciliation processes and financial controls • Experience with event streaming platforms (Kafka, MQ, etc.) • Familiarity with core banking / GL / treasury systems • Exposure to ISO 20022 and regulatory/payment compliance requirements • Strong experience in API-led and microservices architecture
+
+---
+# Hexaware- Payment 
+**Job Description:**
+
+Domain Solution Architect – Payments, Reconciliation & Cash Management (Offshore)
+
+- Preferred technology stack: Java/Dot Net
+- Specific platforms or products (if any) in scope
+- Cloud requirements: AWS/ Azure
+- Containerization expectations: Docker, Kubernetes
+- Any mandated architecture frameworks
+
+Role Overview
+
+Own architecture for Payments, Reconciliation, and Cash Management streams, ensuring transaction integrity, financial accuracy, and high-volume scalability using event-driven patterns.
+
+Key Responsibilities
+
+- Design end-to-end payment flows (initiation → processing → settlement → reconciliation)
+- Define event-driven integration patterns between payment engines, GL, and downstream systems
+- Architect reconciliation frameworks ensuring accuracy, break management, and auditability
+- Support cash positioning, liquidity management, and treasury integrations
+- Ensure high availability, fault tolerance, and real-time processing capability
+- Collaborate with Operations Monitoring and Billing teams for end-to-end alignment
+- Review and validate vendor and third-party payment solutions
+
+Experience Required
+
+- 8–12 years  experience with 3+ years as Solution Architect / Lead Architect
+- Strong domain expertise in Payments and Financial Processing systems
+- Experience in banking transformation or payment modernization programs
+
+Technical & Domain Skills
+
+- Hands-on experience in payment systems (SEPA, SWIFT, CHAPS, Faster Payments)
+- Strong knowledge of reconciliation processes and financial controls
+- Experience with event streaming platforms (Kafka, MQ, etc.)
+- Familiarity with core banking / GL / treasury systems
+- Exposure to ISO 20022 and regulatory/payment compliance requirements
+
+Strong experience in API-led and microservices architecture
+
+# Solution Architect – IaC & Automation
+We are looking for an experienced **Solution Architect** with **10–15 years of relevant experience** in Infrastructure as Code (IaC), automation, DevSecOps, and platform engineering. The ideal candidate should have strong architectural expertise in designing scalable, secure, and highly available enterprise solutions with extensive hands-on experience in automation, infrastructure development, and modern DevOps practices.
+
+The candidate will work closely with engineering, operations, security, and business stakeholders to define technical strategy, solution architecture, and automation frameworks.
+
+## Key Responsibilities
+
+- Design and implement enterprise-scale Infrastructure as Code (IaC) solutions.
+- Develop automation and DevSecOps frameworks for infrastructure provisioning and deployment.
+- Architect scalable, secure, and highly available infrastructure platforms.
+- Build reusable automation modules using Terraform, Ansible, or Chef.
+- Develop automation scripts using Python, Go, Java, or Ruby.
+- Design and integrate REST APIs for infrastructure automation.
+- Define architecture standards, best practices, and governance.
+- Lead technical architecture discussions and solution reviews.
+- Implement and optimize CI/CD pipelines using Jenkins, GitLab, or CircleCI.
+- Design Kubernetes-based container platforms and Docker environments.
+- Administer Linux-based infrastructure and automation platforms.
+- Collaborate with Development, Infrastructure, Security, and Operations teams.
+- Mentor technical teams and provide architectural guidance.
+- Drive automation initiatives to improve operational efficiency.
+
+## Required Skills
+
+- 10–15 years of IT experience with Solution Architecture.
+- Strong expertise in Infrastructure as Code (IaC).
+- Hands-on experience with Terraform and Ansible.
+- Strong knowledge of Kubernetes and Docker.
+- Experience in Linux Administration and Shell scripting.
+- Programming experience in Python, GoLang, Java, or Ruby.
+- Experience with RESTful APIs.
+- Strong CI/CD experience using Jenkins, GitLab, or CircleCI.
+- Infrastructure automation and configuration management.
+- Enterprise architecture and solution design.
+- Strong analytical, troubleshooting, and leadership skills.
+
+## Preferred Skills
+
+- AWS, Azure, or GCP.
+- Helm and GitOps.
+- Prometheus, Grafana, and ELK Stack.
+- Bare Metal infrastructure.
+- SAN/NAS Storage.
+- Enterprise Networking and Security.
+- Bash and PowerShell scripting.
+
+# AWS AI Architect
+AWS AI Solutions Architect
+Location: India (Remote/Hybrid)
+Experience: 8–12 Years
+Employment Type: Full-Time
+About the Role
+We are looking for an experienced AWS AI Solutions Architect to lead the design, deployment,
+and scaling of enterprise-grade AI solutions on AWS. This role requires a strong combination of
+Cloud Architecture, AI/Generative AI Integration, Security, DevOps, and Enterprise
+Application Integration expertise.
+The ideal candidate should have hands-on experience building and operating AI-powered
+applications using Amazon Bedrock, Claude, OpenAI, SageMaker, and modern cloud-native
+architectures. The role involves working closely with business stakeholders, engineering teams,
+and customers to deliver scalable, secure, and production-ready AI solutions.
+Key Responsibilities
+ Design and implement scalable, secure, and highly available AWS cloud architectures.
+ Architect and deploy AI/Generative AI solutions using Amazon Bedrock, Claude, OpenAI,
+SageMaker, and related technologies.
+ Build enterprise AI applications leveraging RAG, vector databases, AI agents, and
+workflow automation.
+ Design API-first, microservices, event-driven, and serverless architectures.
+ Lead integrations across Salesforce, CRM, ERP, SaaS platforms, and AI services.
+ Establish cloud governance, security controls, authentication, authorization, and secrets
+management frameworks.
+ Drive infrastructure automation using Terraform/CloudFormation and modern CI/CD
+practices.
+ Define monitoring, logging, observability, scaling, disaster recovery, and production
+support strategies.
+ Conduct architecture reviews and provide technical leadership to engineering teams.
+Required Skills &amp; Experience
+AWS &amp; Cloud
+ AWS Solutions Architecture (7+ years)
+ EC2, Lambda, ECS/EKS, API Gateway, S3, RDS, DynamoDB
+ IAM, CloudWatch, VPC, Security Services
+ Terraform / CloudFormation
+ Containerization (Docker, Kubernetes)
+
+AI &amp; Generative AI
+ Amazon Bedrock
+ Anthropic Claude
+ OpenAI APIs
+ SageMaker
+ RAG Architecture
+ Vector Databases (OpenSearch, Pinecone, ChromaDB, Weaviate)
+ AI Agents and Workflow Automation
+ Prompt Engineering
+Enterprise Architecture
+ API Management &amp; Integration
+ Microservices &amp; Event-Driven Architecture
+ OAuth, SSO, Security Architecture
+ Logging, Monitoring, Rate Limiting &amp; Scalability
+ Enterprise Application Integration
+Preferred Qualifications
+ AWS Solutions Architect Professional Certification
+ AWS Machine Learning Specialty Certification
+ Experience delivering enterprise AI solutions in production environments
+ Strong stakeholder management and customer-facing communication skills
+What We Are Looking For
+Candidates must demonstrate practical experience in:
+ AI deployments on AWS using Bedrock and LLMs
+ Enterprise-scale cloud architecture and integrations
+ Production monitoring, troubleshooting, and observability
+ Security, authentication, governance, and compliance
+ Designing scalable AI-powered business applications
+Note: This is not a traditional AWS Infrastructure role. We are specifically looking for
+professionals who have successfully delivered AI-powered cloud solutions in production
+environments and can bridge the gap between Cloud Architecture, AI Engineering, Security,
+and Enterprise Integration.

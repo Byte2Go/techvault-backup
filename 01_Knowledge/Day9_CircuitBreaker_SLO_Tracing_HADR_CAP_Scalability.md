@@ -292,7 +292,7 @@ SLI 2: latency — percentage of requests completing under 3 seconds (payment us
 
 ---
 
-## Topic 3 · Distributed Tracing
+## Topic 3 · [[Monitoring- Distributed Tracing]]
 
 ### In One Line
 <mark style="background: #FFB86CA6;">Distributed tracing follows a single request across all microservices</mark>, <mark style="background: #ADCCFFA6;">showing exactly where time was spent and where failures occurred</mark> — impossible to debug complex systems without it.
@@ -414,13 +414,12 @@ public class TraceIdFilter implements Filter {
 
 ---
 
-## Topic 4 · Metrics — Prometheus + Grafana
+## Topic 4 · [[Monitoring- Observability Architecture]]
 
 ### In One Line
-Prometheus scrapes metrics from services; Grafana visualizes them — together they give you RED metrics, JVM health, and the data to back up SLO compliance.
+<mark style="background: #FFB86CA6;">Prometheus scrapes metrics from services; Grafana visualizes them</mark> —<mark style="background: #FFF3A3A6;"> together they give you RED metrics</mark>, JVM health, and the data to back up SLO compliance.
 
 ### RED Method (for every service)
-
 ```
 R — Rate:     requests per second
 E — Errors:   error rate (5xx / total)
@@ -480,7 +479,6 @@ public class OrderService {
 ```
 
 ### Key Dashboards to Describe in Interviews
-
 ```
 Service Dashboard (per microservice):
   ├── Request rate (RPS)
@@ -507,10 +505,9 @@ SLO Dashboard:
 ## Topic 5 · HA/DR — RTO/RPO Design
 
 ### In One Line
-HA keeps you running during partial failures; DR gets you back after a catastrophic failure — RTO and RPO define how good your DR must be.
+<mark style="background: #ADCCFFA6;">HA keeps you running during partial failures</mark>; <mark style="background: #D2B3FFA6;">DR gets you back after a catastrophic failure</mark> — RTO and RPO define how good your DR must be.
 
 ### Definitions
-
 ```
 RTO (Recovery Time Objective):
   Maximum acceptable downtime after a disaster
@@ -526,7 +523,6 @@ RPO ↓ = more expensive (sync replication vs daily backup)
 ```
 
 ### HA Architecture — Multi-AZ
-
 ```
 AWS ap-south-1 (Mumbai):
   VPC
@@ -535,8 +531,8 @@ AWS ap-south-1 (Mumbai):
   │   ├── RDS Primary
   │   └── ElastiCache Primary
   └── AZ ap-south-1b:
-      ├── EKS nodes (3 pods)       ← k8s scheduler spreads pods across AZs
-      ├── RDS Standby (sync)       ← automatic failover in <60s on primary failure
+      ├── EKS nodes (3 pods)     ← k8s scheduler spreads pods across AZs
+      ├── RDS Standby (sync)     ← automatic failover in <60s on primary failure
       └── ElastiCache Replica
 
 ALB routes traffic across both AZs.
@@ -549,12 +545,12 @@ If AZ-a goes down:
 
 ### DR Tiers
 
-| Tier | Strategy | RTO | RPO | Cost |
-|---|---|---|---|---|
-| **Backup & Restore** | Restore from S3 backup | Hours–days | Hours | Low |
-| **Pilot Light** | Core infra running; app off | 1-4 hours | Minutes | Medium |
-| **Warm Standby** | Scaled-down prod in DR region | 15-60 min | Seconds | High |
-| **Hot Standby (Active-Active)** | Full capacity in both regions | Near-zero | Near-zero | Very High |
+| Tier                            | Strategy                      | RTO        | RPO       | Cost      |
+| ------------------------------- | ----------------------------- | ---------- | --------- | --------- |
+| **Backup & Restore**            | Restore from S3 backup        | Hours–days | Hours     | Low       |
+| **Pilot Light**                 | Core infra running; app off   | 1-4 hours  | Minutes   | Medium    |
+| **Warm Standby**                | Scaled-down prod in DR region | 15-60 min  | Seconds   | High      |
+| **Hot Standby (Active-Active)** | Full capacity in both regions | Near-zero  | Near-zero | Very High |
 
 ### Typical Design for "RTO 4hr / RPO 1hr" (Common Interview Scenario)
 

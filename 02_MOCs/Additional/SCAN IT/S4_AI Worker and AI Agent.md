@@ -29,10 +29,10 @@ The **AI Agent** is the complete, intelligent solution that the back-office team
 
 ### Summary Checklist for Your Interview:
 
-|**Component**|**What is it made of?**|**What is its primary function?**|
-|---|---|---|
-|**AI Worker**|Standard Backend Code (Python, Node.js)|Handles the plumbing: polls SQS, calls APIs, writes to Oracle DB.|
-|**AI Agent**|The combined system (Worker + Model + RAG)|Executes the actual business task: understands, categorizes, and summarizes the emails.|
+| **Component** | **What is it made of?**                    | **What is its primary function?**                                                       |
+| ------------- | ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| **AI Worker** | Standard Backend Code (Python, Node.js)    | Handles the plumbing: polls SQS, calls APIs, writes to Oracle DB.                       |
+| **AI Agent**  | The combined system (Worker + Model + RAG) | Executes the actual business task: understands, categorizes, and summarizes the emails. |
 
 When you are in the interview, you can say:
 
